@@ -1,8 +1,8 @@
 # AAU History
 
 The record book for every AAU dynasty. Upload the backups from the AAU sport
-dynasties (volleyball, softball and baseball, soccer, field hockey, and any
-sport added later) and AAU History keeps the combined history:
+dynasties (volleyball, softball and baseball, soccer, field hockey,
+basketball, lacrosse, ice hockey, and any sport added later) and AAU History keeps the combined history:
 
 - **Champions:** national champions for every sport side by side, and for one
   sport its champions, runners-up, finals teams and site, plus every
@@ -27,12 +27,15 @@ It is a static site with no build step, like the dynasty apps.
 3. After each season, upload the new backups. A sport's newer upload replaces
    its seasons and keeps any older seasons the new file no longer has.
 
-AAU History works out which sport each file is from its results (sets,
-innings, halves or quarters), so a renamed dynasty is still recognized.
+AAU History works out which sport each file is from the sport the newer
+apps write into their backups (basketball, lacrosse, ice hockey) or from its
+results (sets, innings, halves, periods or quarters), so a renamed dynasty is
+still recognized.
 A backup it doesn't know (a sport added later) asks for the sport's name,
 women's or men's, and whether ties stand; after that it works like the rest.
 Records follow each sport's rules: a soccer match decided on penalty kicks is
-a tie, and a field hockey shootout is a win.
+a tie, a field hockey shootout is a win, and a regular-season ice hockey game
+tied after overtime is a tie.
 
 Seasons still in progress show on school pages (marked with \*) and count in
 the cup once their national champion is crowned.

@@ -50,15 +50,18 @@ with sync_playwright() as p:
     t = visit(pg, "#/home", "a-empty")
     assert "Upload dynasty backups" in t
 
-    # Upload all seven dynasties at once.
+    # Upload all thirteen dynasties at once.
     pg.set_input_files("#up-file", files)
     pg.wait_for_function("document.querySelector('#app').innerText.includes('Latest national champions')", timeout=20000)
     t = visit(pg, "#/home", "b-home")
-    assert "7 sports" in t and "All-Sports Cup" in t
+    assert "13 sports" in t and "All-Sports Cup" in t
     for c in champs.values(): assert c in t, c
 
     t = visit(pg, "#/champions", "c-champions")
-    for name in ["Women's Volleyball", "Men's Volleyball", "Softball", "Baseball", "Women's Soccer", "Men's Soccer", "Field Hockey"]: assert name in t, name
+    for name in ["Women's Volleyball", "Men's Volleyball", "Softball", "Baseball", "Women's Soccer", "Men's Soccer", "Field Hockey", "Women's Basketball", "Men's Basketball", "Women's Lacrosse", "Men's Lacrosse", "Women's Ice Hockey", "Men's Ice Hockey"]: assert name in t, name
+    pg.click('[data-cs="m-hockey"]'); pg.wait_for_timeout(200)
+    t = pg.locator("#app").inner_text()
+    assert "Frozen Four" in t
     pg.click('[data-cs="w-soccer"]'); pg.wait_for_timeout(200)
     t = pg.locator("#app").inner_text()
     assert "conference champions" in t and "College Cup" in t
@@ -83,14 +86,14 @@ with sync_playwright() as p:
 
     # The history survives a reload; a history backup restores it elsewhere.
     t = visit(pg, "#/data", "g-data")
-    assert t.count("Remove") == 7
+    assert t.count("Remove") == 13
     with pg.expect_download() as dl: pg.click("#d-export")
     path = tmp / "history.json"; dl.value.save_as(path)
     pg.click("#d-reset"); pg.wait_for_timeout(300)
     assert "Nothing uploaded yet" in pg.locator("#app").inner_text()
     pg.set_input_files("#d-import", str(path)); pg.wait_for_timeout(800)
     t = visit(pg, "#/data")
-    assert t.count("Remove") == 7, "restored from the history backup"
+    assert t.count("Remove") == 13, "restored from the history backup"
 
     pg.set_viewport_size({"width": 390, "height": 800})
     for h in ["#/home", "#/champions", "#/schools", "#/cup", f"#/school/{champ}"]:

@@ -1,10 +1,10 @@
 // Pages: home, champions, schools, a school, the all-sports cup, and data.
 
-import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec } from './ui.js?v=20261102010239';
-import { SPORTS, detectSport, customSport, isDynastyBackup } from './sports.js?v=20261102010239';
-import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261102010239';
-import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261102010239';
-import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261102010239';
+import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec } from './ui.js?v=20261102104910';
+import { SPORTS, detectSport, customSport, isDynastyBackup } from './sports.js?v=20261102104910';
+import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261102104910';
+import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261102104910';
+import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261102104910';
 
 const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '' };
 const finishText = (d, s, t) => (t.finish === 'finals' ? s.finalsName : FINISH_LABEL[t.finish] || '');
@@ -178,7 +178,7 @@ export function renderSchools() {
   const f = ui.schoolFilter.toLowerCase();
   const list = names.filter(n => !f || n.toLowerCase().includes(f)).sort((a, b) => totals[b].titles - totals[a].titles || totals[b].finals - totals[a].finals || a.localeCompare(b));
   app.innerHTML = `<div class="section-head"><h1>Schools</h1><span class="muted">${names.length} schools in ${dynasties().length} sports</span><span class="spacer"></span><input type="search" id="sc-find" placeholder="Find a school" value="${esc(ui.schoolFilter)}" style="min-width:200px"></div>
-    <div class="card"><div class="table-wrap"><table><thead><tr><th>School</th><th class="num">Sports</th><th class="num" title="National titles">Titles</th><th class="num" title="Reached the finals site (Final Four, World Series, College Cup)">Finals</th><th class="num" title="National tournament appearances">Bids</th><th class="num" title="Regular-season conference titles">Conf.</th><th class="num" title="Conference tournament titles">Conf. T</th><th class="num" title="All-Sports Cup wins">Cups</th><th class="num">All-time W-L</th></tr></thead><tbody>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>School</th><th class="num">Sports</th><th class="num" title="National titles">Titles</th><th class="num" title="Reached the finals site (Final Four, Frozen Four, World Series, College Cup)">Finals</th><th class="num" title="National tournament appearances">Bids</th><th class="num" title="Regular-season conference titles">Conf.</th><th class="num" title="Conference tournament titles">Conf. T</th><th class="num" title="All-Sports Cup wins">Cups</th><th class="num">All-time W-L</th></tr></thead><tbody>
       ${list.map(n => { const x = totals[n]; return `<tr><td>${school(n)}</td><td class="num">${x.sports.size}</td><td class="num"><b>${x.titles || ''}</b></td><td class="num">${x.finals || ''}</td><td class="num">${x.bids || ''}</td><td class="num">${x.reg || ''}</td><td class="num">${x.tour || ''}</td><td class="num">${x.cups || ''}</td><td class="num">${rec(x)}</td></tr>`; }).join('')}
     </tbody></table></div></div>`;
   const find = $('#sc-find');
@@ -234,7 +234,7 @@ export function renderCup() {
       </tbody></table></div></div>
       <div class="card"><h2>Scoring</h2><table><tbody>
         <tr><td>National champion</td><td class="num">${CUP_POINTS.champion}</td></tr><tr><td>Runner-up</td><td class="num">${CUP_POINTS['runner-up']}</td></tr>
-        <tr><td>Reached the finals site (Final Four, World Series, College Cup)</td><td class="num">${CUP_POINTS.finals}</td></tr><tr><td>Reached a super regional</td><td class="num">${CUP_POINTS.super}</td></tr>
+        <tr><td>Reached the finals site (Final Four, Frozen Four, World Series, College Cup)</td><td class="num">${CUP_POINTS.finals}</td></tr><tr><td>Reached a super regional</td><td class="num">${CUP_POINTS.super}</td></tr>
         <tr><td>In the national tournament</td><td class="num">${CUP_POINTS.field} + ${CUP_POINTS.perWin} a win (max ${CUP_POINTS.fieldMax})</td></tr></tbody></table>
         <p class="small muted">A sport counts toward a year's cup once its national champion is crowned.</p></div>
     </div>`;

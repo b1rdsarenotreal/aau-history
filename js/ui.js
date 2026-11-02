@@ -1,7 +1,7 @@
 // Shared page pieces: the history, logos, school labels, sport labels.
 
-import { logoFor } from './logos.js?v=20261102010239';
-import { SPORTS } from './sports.js?v=20261102010239';
+import { logoFor } from './logos.js?v=20261102104910';
+import { SPORTS } from './sports.js?v=20261102104910';
 
 export const ctx = { history: null, render: () => {} };
 export const app = document.getElementById('app');

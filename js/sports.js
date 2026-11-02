@@ -1,7 +1,8 @@
 // The sports AAU History knows, and how to tell which one a backup is.
 //
 // Every AAU dynasty app (volleyball, softball and baseball, soccer, field
-// hockey, and any later one built on the same engine) saves its backup as
+// hockey, basketball, lacrosse, ice hockey, and any later one built on the
+// same engine) saves its backup as
 // the league itself: { name, side, seasons: { year: { teams, games, post,
 // polls, ... } }, conferences, coaches }. AAU History reads any of them.
 //
@@ -11,18 +12,25 @@
 //   short   for narrow columns ("W Soc")
 //   gender  'women' | 'men' (the all-sports cup can show either or both)
 //   finals  the national finals' name when the backup doesn't give one
-//   ties    whether level matches can stand as ties (soccer)
+//   ties    whether level games can stand as ties (soccer, ice hockey)
 //   pkWins  whether a shootout decides the result in the record (field
 //           hockey: yes; soccer: no, the match is a tie in the record)
 
+// In season order: fall, winter, spring.
 export const SPORTS = {
   'w-volleyball': { name: "Women's Volleyball", short: 'W VB', gender: 'women', finals: 'Final Four' },
   'm-volleyball': { name: "Men's Volleyball", short: 'M VB', gender: 'men', finals: 'National Tournament' },
-  softball: { name: 'Softball', short: 'SB', gender: 'women', finals: "Women's College World Series" },
-  baseball: { name: 'Baseball', short: 'BSB', gender: 'men', finals: 'College World Series' },
   'w-soccer': { name: "Women's Soccer", short: 'W Soc', gender: 'women', finals: 'College Cup', ties: true },
   'm-soccer': { name: "Men's Soccer", short: 'M Soc', gender: 'men', finals: 'College Cup', ties: true },
   'field-hockey': { name: 'Field Hockey', short: 'FH', gender: 'women', finals: 'Final Four', pkWins: true },
+  'w-basketball': { name: "Women's Basketball", short: 'W BB', gender: 'women', finals: 'Final Four' },
+  'm-basketball': { name: "Men's Basketball", short: 'M BB', gender: 'men', finals: 'Final Four' },
+  'w-hockey': { name: "Women's Ice Hockey", short: 'W IH', gender: 'women', finals: 'Frozen Four', ties: true },
+  'm-hockey': { name: "Men's Ice Hockey", short: 'M IH', gender: 'men', finals: 'Frozen Four', ties: true },
+  softball: { name: 'Softball', short: 'SB', gender: 'women', finals: "Women's College World Series" },
+  baseball: { name: 'Baseball', short: 'BSB', gender: 'men', finals: 'College World Series' },
+  'w-lacrosse': { name: "Women's Lacrosse", short: 'W Lax', gender: 'women', finals: 'Final Four' },
+  'm-lacrosse': { name: "Men's Lacrosse", short: 'M Lax', gender: 'men', finals: 'Final Four' },
 };
 for (const [id, p] of Object.entries(SPORTS)) p.id = id;
 
@@ -34,7 +42,9 @@ export function customSport(name, gender) {
 
 // Typical periods in a regular-season line score, and the largest score in
 // a period: volleyball has 3–5 sets of up to 25+ points; softball 7 innings,
-// baseball 9; soccer 2 halves; field hockey 4 quarters.
+// baseball 9; soccer 2 halves; field hockey 4 quarters; ice hockey 3
+// periods. Basketball (2 halves or 4 quarters of many points) and lacrosse
+// (4 quarters, like field hockey) are told apart by `league.sport`.
 function lineShape(league) {
   const lens = [], tops = [];
   for (const s of Object.values(league.seasons || {})) {
@@ -58,8 +68,13 @@ export function detectSport(league) {
   const men = side === 'men' || /\bmen'?s\b/.test(name) && !/women/.test(name);
   if (side === 'softball') return { sport: SPORTS.softball, sure: true };
   if (side === 'baseball') return { sport: SPORTS.baseball, sure: true };
+  // Newer apps say which sport they are.
+  const tagged = { basketball: 'basketball', lacrosse: 'lacrosse', hockey: 'hockey' }[league?.sport];
+  if (tagged) return { sport: SPORTS[`${men ? 'm' : 'w'}-${tagged}`], sure: true };
   const shape = lineShape(league);
   if (shape) {
+    if (shape.len === 2 && shape.top >= 15) return { sport: SPORTS[men ? 'm-basketball' : 'w-basketball'], sure: true };
+    if (shape.len === 3 && shape.top < 10) return { sport: SPORTS[men ? 'm-hockey' : 'w-hockey'], sure: true };
     if (shape.top >= 15 && shape.len >= 3 && shape.len <= 5) return { sport: SPORTS[men ? 'm-volleyball' : 'w-volleyball'], sure: true };
     if (shape.len === 2) return { sport: SPORTS[men ? 'm-soccer' : 'w-soccer'], sure: true };
     if (shape.len === 4 && shape.top < 15) return { sport: SPORTS['field-hockey'], sure: true };
@@ -70,6 +85,9 @@ export function detectSport(league) {
   if (/volleyball/.test(name)) return { sport: SPORTS[men ? 'm-volleyball' : 'w-volleyball'], sure: true };
   if (/soccer/.test(name)) return { sport: SPORTS[men ? 'm-soccer' : 'w-soccer'], sure: true };
   if (/field hockey|fhockey/.test(name)) return { sport: SPORTS['field-hockey'], sure: true };
+  if (/basketball/.test(name)) return { sport: SPORTS[men ? 'm-basketball' : 'w-basketball'], sure: true };
+  if (/lacrosse/.test(name)) return { sport: SPORTS[men ? 'm-lacrosse' : 'w-lacrosse'], sure: true };
+  if (/hockey/.test(name)) return { sport: SPORTS[men ? 'm-hockey' : 'w-hockey'], sure: true };
   if (/softball/.test(name)) return { sport: SPORTS.softball, sure: true };
   if (/baseball/.test(name)) return { sport: SPORTS.baseball, sure: true };
   const guess = String(league?.name || 'New sport').replace(/^AAU\s+/i, '').replace(/^(wo)?men'?s\s+/i, '').trim() || 'New sport';

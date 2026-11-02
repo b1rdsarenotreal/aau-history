@@ -1,8 +1,9 @@
 # AAU History
 
 A static record book that reads backups from the owner's AAU dynasty apps
-(AAU Volleyball, AAU Softball & Baseball, AAU Soccer, AAU Field Hockey, and
-any later sport built on the same MCS engine) and keeps their combined
+(AAU Volleyball, AAU Softball & Baseball, AAU Soccer, AAU Field Hockey, AAU
+Basketball, AAU Lacrosse, AAU Hockey, and any later sport built on the same
+MCS engine) and keeps their combined
 history in the browser: champions, school pages across sports and the
 All-Sports Cup.
 
@@ -13,21 +14,24 @@ dynasty apps aren't made from here unless the owner asks.
 
 - A dynasty backup is the league JSON (`{ name, side, seasons: { year: {
   teams, games, post, polls, settings, overrides } }, conferences, coaches }`).
-  `js/sports.js` detects the sport from `side` (softball/baseball) and the
-  shape of regular-season line scores (volleyball sets, 2 soccer halves, 4
-  field hockey quarters, 7/9 innings), then the name; unknown sports are
-  named on upload (`customSport`).
+  `js/sports.js` detects the sport from `side` (softball/baseball), then
+  `league.sport` (basketball, lacrosse, hockey: the newer apps set it), then
+  the shape of regular-season line scores (volleyball sets, 2 soccer halves
+  or high-scoring basketball halves, 3 hockey periods, 4 field hockey
+  quarters, 7/9 innings), then the name; unknown sports are named on upload
+  (`customSport`). `SPORTS` is in season order (fall, winter, spring).
 - `js/extract.js` keeps only a summary per season (records, conference and
   coach, conference titles, national tournament finish and wins, final poll
-  rank, champions). Sport rules live in the profile: `ties` (soccer) and
-  `pkWins` (field hockey). Bump `EXTRACT_VERSION` when the summary changes.
+  rank, champions). Sport rules live in the profile: `ties` (soccer, ice
+  hockey) and `pkWins` (field hockey). Bump `EXTRACT_VERSION` when the summary changes.
 - Uploads merge per sport: new seasons replace, older seasons are kept
   (`mergeDynasty` in `js/store.js`). History is in IndexedDB under
   `aau-history`.
 - Cup scoring is `CUP_POINTS` in `js/cup.js`; only seasons with a crowned
   champion count.
-- When a new dynasty app ships, add its sport to `SPORTS` (and detection if
-  needed) and a fixture from it to `tests/fixtures/` (trimmed, gzipped).
+- When a new dynasty app ships, have it set `league.sport`, add its sport to
+  `SPORTS` (and detection) and a fixture from it to `tests/fixtures/`
+  (trimmed, gzipped).
 
 ## Before every commit
 

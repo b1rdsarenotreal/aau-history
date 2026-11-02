@@ -4,7 +4,7 @@
 //
 //   National champion            100
 //   Runner-up                     85
-//   Reached the finals site       70   (Final Four, World Series, College Cup)
+//   Reached the finals site       70   (Final Four, Frozen Four, World Series, College Cup)
 //   Reached a super regional      55
 //   In the national tournament    30, plus 8 for each national tournament win
 //                                       (at most 50)
@@ -12,7 +12,7 @@
 // The conference cup adds up its members' points in each sport (a school
 // counts for the conference it played that sport in that year).
 
-import { SPORTS } from './sports.js?v=20261102010239';
+import { SPORTS } from './sports.js?v=20261102104910';
 
 const sportRank = sp => { const i = Object.keys(SPORTS).indexOf(sp.id); return i < 0 ? 99 : i; };
 
