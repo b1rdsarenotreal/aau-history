@@ -1,0 +1,140 @@
+// Turns a dynasty backup into history: for every season, every team's
+// record, conference, coach, conference titles and national tournament
+// finish, plus the season's champions. Only this summary is kept (a full
+// backup can be megabytes per season); re-upload the backup to refresh it.
+
+// Bump when the summary's shape or meaning changes; the Data page then asks
+// for a fresh upload of older entries.
+export const EXTRACT_VERSION = 1;
+
+const NATIONAL = new Set(['regional', 'super', 'mcws']);
+const isFinal = g => g && g.final && g.homeR != null && g.awayR != null;
+
+// Who won a game: more goals/runs/sets, or the shootout. Null when level.
+export function winnerOf(g) {
+  if (g.homeR > g.awayR) return g.home;
+  if (g.awayR > g.homeR) return g.away;
+  if (g.pk && g.pk.home !== g.pk.away) return g.pk.home > g.pk.away ? g.home : g.away;
+  return null;
+}
+// 'W', 'L' or 'T' for team t under the sport's rules: a shootout decides the
+// record only when the sport says so (field hockey); otherwise a level match
+// is a tie (soccer).
+export function resultFor(g, t, sport) {
+  const level = g.homeR === g.awayR;
+  if (level && !(sport.pkWins && g.pk)) return 'T';
+  return winnerOf(g) === t ? 'W' : 'L';
+}
+
+const blank = () => ({ w: 0, l: 0, t: 0, cw: 0, cl: 0, ct: 0, gf: 0, ga: 0 });
+export const pct = r => (r.w + r.l + r.t ? (r.w + r.t / 2) / (r.w + r.l + r.t) : 0);
+
+// Teams that reached the finals site, in either finals format.
+function finalsTeams(post) {
+  return post.mcws?.seeds || (post.mcwsBrackets || []).flatMap(ev => ev.seeds || []);
+}
+
+// Regular-season conference champions: the best conference record (points
+// when the sport has ties, winning percentage otherwise), shared on a tie,
+// unless the commissioner named one champion in the dynasty.
+function regChamps(season, recs, sport) {
+  const out = {};
+  const byConf = {};
+  for (const [t, team] of Object.entries(season.teams)) if (team.conference && team.conference !== 'Independent') (byConf[team.conference] ||= []).push(t);
+  const done = season.games.some(g => g.type === 'regular') && season.games.filter(g => g.type === 'regular').every(isFinal);
+  for (const [c, list] of Object.entries(byConf)) {
+    const o = season.overrides?.regChamps?.[c];
+    if (o) { out[c] = [o]; continue; }
+    const played = list.filter(t => recs[t].cw + recs[t].cl + recs[t].ct > 0);
+    if (!played.length || !done) continue;
+    const score = t => (sport.ties ? (3 * recs[t].cw + recs[t].ct) / (recs[t].cw + recs[t].cl + recs[t].ct) : (recs[t].cw + recs[t].ct / 2) / (recs[t].cw + recs[t].cl + recs[t].ct));
+    const best = Math.max(...played.map(score));
+    out[c] = played.filter(t => Math.abs(score(t) - best) < 1e-9).sort();
+  }
+  return out;
+}
+
+// One season's summary.
+export function seasonSummary(season, league, sport) {
+  const post = season.post || {};
+  const recs = {};
+  for (const t of Object.keys(season.teams)) recs[t] = blank();
+  const nat = {}; // national tournament wins/losses
+  for (const g of season.games || []) {
+    if (!isFinal(g) || !recs[g.home] || !recs[g.away]) continue;
+    for (const t of [g.home, g.away]) {
+      const r = recs[t], res = resultFor(g, t, sport);
+      r[res.toLowerCase()]++;
+      r.gf += t === g.home ? g.homeR : g.awayR; r.ga += t === g.home ? g.awayR : g.homeR;
+      if (g.type === 'regular' && g.confGame) r['c' + res.toLowerCase()]++;
+      if (NATIONAL.has(g.type)) { const n = (nat[t] ||= { w: 0, l: 0 }); winnerOf(g) === t ? n.w++ : n.l++; }
+    }
+  }
+  const champs = regChamps(season, recs, sport);
+  const confT = {};
+  for (const [c, ev] of Object.entries(post.confT || {})) if (ev?.champion) confT[c] = ev.champion;
+  const field = Object.fromEntries((post.field || []).map(f => [f.team, f.seed]));
+  const finals = finalsTeams(post);
+  const supers = new Set((post.supers || []).flatMap(ev => ev.seeds || []));
+  const finalPoll = (season.polls?.final?.ranks || []).map(r => r.team);
+  const complete = season.phase === 'complete' && !!post.champion;
+  const teams = {};
+  for (const [t, team] of Object.entries(season.teams)) {
+    const r = recs[t];
+    let finish = null;
+    if (post.champion === t) finish = 'champion';
+    else if (post.runnerUp === t) finish = 'runner-up';
+    // The finals site counts as its own round only when the field is bigger
+    // than it (men's volleyball plays its whole field there).
+    else if (finals.includes(t) && finals.length < (post.field || []).length) finish = 'finals';
+    else if (supers.has(t)) finish = 'super';
+    else if (field[t] != null) finish = 'field';
+    teams[t] = {
+      conf: team.conference || null,
+      coach: league.coaches?.[team.coachId]?.name || '',
+      ...r,
+      regChamp: (champs[team.conference] || []).includes(t) || undefined,
+      tourneyChamp: confT[team.conference] === t || undefined,
+      seed: field[t] ?? undefined,
+      natW: nat[t]?.w || 0, natL: nat[t]?.l || 0,
+      finish: finish || undefined,
+      rank: finalPoll.includes(t) ? finalPoll.indexOf(t) + 1 : undefined,
+    };
+  }
+  return {
+    complete,
+    finalsName: season.settings?.mcwsName || sport.finals,
+    venue: [season.settings?.mcwsVenue, season.settings?.mcwsCity].filter(Boolean).join(', '),
+    champion: post.champion || null, runnerUp: post.runnerUp || null,
+    finals: finals.slice(), fieldSize: (post.field || []).length,
+    regChamps: champs, confTChamps: confT,
+    teams,
+  };
+}
+
+// The whole backup: { sport, name, years: { y: summary }, schools: { school: look } }.
+export function extractDynasty(league, sport) {
+  const years = {};
+  const schools = {};
+  const ys = Object.keys(league.seasons || {}).map(Number).sort((a, b) => a - b);
+  for (const y of ys) {
+    const season = league.seasons[y];
+    if (!season?.teams || !Array.isArray(season.games)) continue;
+    // Seasons not started yet add nothing.
+    if (!season.games.some(isFinal)) continue;
+    years[y] = seasonSummary(season, league, sport);
+    for (const [t, team] of Object.entries(season.teams)) {
+      // Keep the latest look of each school (colors, abbreviation, mascot,
+      // its own logo when it's a link; uploaded images are left out to keep
+      // the history small).
+      const logo = team.logoOverride && !/^data:/.test(team.logoOverride) ? team.logoOverride : null;
+      schools[t] = { school: t, abbr: team.abbr, mascot: team.mascot, color: team.color, altColor: team.altColor, logo: logo || schools[t]?.logo || null };
+    }
+  }
+  const conferences = {};
+  for (const [c, info] of Object.entries(league.conferences || {})) {
+    if (c === 'Independent') continue;
+    conferences[c] = { abbr: info.abbr, color: info.color, logo: info.logo && !/^data:/.test(info.logo) ? info.logo : null };
+  }
+  return { version: EXTRACT_VERSION, sport, name: league.name || sport.name, years, schools, conferences };
+}
