@@ -1,10 +1,10 @@
 // Pages: home, champions, schools, a school, the all-sports cup, and data.
 
-import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec } from './ui.js?v=20261102104910';
-import { SPORTS, detectSport, customSport, isDynastyBackup } from './sports.js?v=20261102104910';
-import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261102104910';
-import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261102104910';
-import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261102104910';
+import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec } from './ui.js?v=20261102230101';
+import { SPORTS, detectSport, customSport, isDynastyBackup } from './sports.js?v=20261102230101';
+import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261102230101';
+import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261102230101';
+import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261102230101';
 
 const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '' };
 const finishText = (d, s, t) => (t.finish === 'finals' ? s.finalsName : FINISH_LABEL[t.finish] || '');
