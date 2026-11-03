@@ -1,10 +1,10 @@
 // Pages: home, champions, schools, a school, the all-sports cup, and data.
 
-import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec } from './ui.js?v=20261102232704';
-import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261102232704';
-import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261102232704';
-import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261102232704';
-import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261102232704';
+import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261103153223';
+import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261103153223';
+import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261103153223';
+import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261103153223';
+import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261103153223';
 
 const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '' };
 const finishText = (d, s, t) => (t.finish === 'finals' ? s.finalsName : FINISH_LABEL[t.finish] || '');
@@ -110,13 +110,13 @@ export function renderHome() {
   const seasons = ds.reduce((a, d) => a + Object.keys(d.years).length, 0);
   app.innerHTML = `<div class="section-head"><h1>AAU History</h1><span class="muted">${ds.length} sport${ds.length === 1 ? '' : 's'} · ${seasons} seasons · ${allSchools().length} schools</span></div>
     ${ctx.notice ? `<div class="card" style="margin-bottom:16px;border-left:4px solid #d97706"><b>Fixed a mix-up.</b> ${esc(ctx.notice)}</div>` : ''}
-    ${cup?.schools.length ? `<div class="banner" style="background:linear-gradient(120deg, ${esc(schoolLook(cup.schools[0].school).color || '#0b3c5d')}, #15171c)"><span class="trophy">🏆</span><div><div class="small" style="opacity:.8">${last} AAU All-Sports Cup</div><div class="big">${esc(cup.schools[0].school)}</div><div class="small" style="opacity:.8">${cup.schools[0].total} points · ${cup.schools[1] ? `${esc(cup.schools[1].school)} ${cup.schools[1].total}` : ''}</div></div></div><div style="height:16px"></div>` : ''}
+    ${cup?.schools.length ? `<div class="banner" style="background:linear-gradient(120deg, ${esc(schoolLook(cup.schools[0].school).color || '#0b3c5d')}, #15171c)"><span class="trophy">🏆</span><div><div class="small" style="opacity:.8">${seasonLabel(last)} AAU All-Sports Cup</div><div class="big">${esc(cup.schools[0].school)}</div><div class="small" style="opacity:.8">${cup.schools[0].total} points · ${cup.schools[1] ? `${esc(cup.schools[1].school)} ${cup.schools[1].total}` : ''}</div></div></div><div style="height:16px"></div>` : ''}
     <div class="grid">
       <div class="card"><h2>Latest national champions</h2><div class="table-wrap"><table><tbody>
-        ${latest.map(({ d, y, s }) => `<tr><td>${sportTag(d.sport)}</td><td class="num muted">${Number.isFinite(y) ? y : ''}</td><td>${s ? school(s.champion) : '<span class="muted">Not crowned yet</span>'}</td></tr>`).join('')}
+        ${latest.map(({ d, y, s }) => `<tr><td>${sportTag(d.sport)}</td><td class="num muted">${Number.isFinite(y) ? seasonLabel(y) : ''}</td><td>${s ? school(s.champion) : '<span class="muted">Not crowned yet</span>'}</td></tr>`).join('')}
       </tbody></table></div><p class="small muted"><a href="#/champions">All champions ›</a></p></div>
       <div class="card"><h2>Most national titles</h2>${topTitles.length ? `<div class="table-wrap"><table><tbody>${topTitles.map(([t, n], i) => `<tr><td class="num muted">${i + 1}</td><td>${school(t)}</td><td class="num"><b>${n}</b></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No champions crowned yet.</p>'}</div>
-      ${cup ? `<div class="card"><h2>${last} All-Sports Cup</h2><div class="table-wrap"><table><tbody>${cup.schools.slice(0, 8).map((x, i) => `<tr><td class="num muted">${i + 1}</td><td>${school(x.school)}</td><td class="num"><b>${x.total}</b></td></tr>`).join('')}</tbody></table></div><p class="small muted"><a href="#/cup">Full standings ›</a></p></div>` : ''}
+      ${cup ? `<div class="card"><h2>${seasonLabel(last)} All-Sports Cup</h2><div class="table-wrap"><table><tbody>${cup.schools.slice(0, 8).map((x, i) => `<tr><td class="num muted">${i + 1}</td><td>${school(x.school)}</td><td class="num"><b>${x.total}</b></td></tr>`).join('')}</tbody></table></div><p class="small muted"><a href="#/cup">Full standings ›</a></p></div>` : ''}
     </div>
     <div class="card" style="margin-top:16px"><h2>Add seasons</h2>${uploadBox()}</div>`;
   bindUpload();
@@ -135,16 +135,16 @@ export function renderChampions() {
     // Every sport side by side, by year.
     const years = [...new Set(ds.flatMap(d => Object.keys(d.years).map(Number)))].sort((a, b) => b - a);
     body = `<div class="card"><h2>National champions</h2><div class="table-wrap"><table class="champ-grid"><thead><tr><th>Year</th>${ds.map(d => `<th>${esc(d.sport.name)}</th>`).join('')}</tr></thead><tbody>
-      ${years.map(y => `<tr><td><b>${y}</b></td>${ds.map(d => { const s = d.years[y]; return `<td>${s?.champion ? `${school(s.champion, 16)}${s.runnerUp ? `<div class="small muted">over ${esc(s.runnerUp)}</div>` : ''}` : `<span class="muted small">${s ? 'In progress' : ''}</span>`}</td>`; }).join('')}</tr>`).join('')}
+      ${years.map(y => `<tr><td><b>${seasonLabel(y)}</b></td>${ds.map(d => { const s = d.years[y]; return `<td>${s?.champion ? `${school(s.champion, 16)}${s.runnerUp ? `<div class="small muted">over ${esc(s.runnerUp)}</div>` : ''}` : `<span class="muted small">${s ? 'In progress' : ''}</span>`}</td>`; }).join('')}</tr>`).join('')}
     </tbody></table></div></div>`;
   } else {
     const d = pick, years = Object.keys(d.years).map(Number).sort((a, b) => b - a);
     const confs = [...new Set(years.flatMap(y => [...Object.keys(d.years[y].regChamps), ...Object.keys(d.years[y].confTChamps)]))].sort();
     body = `<div class="card"><h2>${esc(d.sport.name)}: national champions</h2><div class="table-wrap"><table><thead><tr><th>Year</th><th>Champion</th><th>Record</th><th>Runner-up</th><th>Finals</th><th>Site</th></tr></thead><tbody>
-      ${years.map(y => { const s = d.years[y]; const c = s.champion && s.teams[s.champion]; return `<tr><td><b>${y}</b></td><td>${s.champion ? school(s.champion) : '<span class="muted">In progress</span>'}</td><td class="num">${c ? rec(c) : ''}</td><td>${s.runnerUp ? school(s.runnerUp, 16) : ''}</td><td class="small">${s.finals.filter(t => t !== s.champion && t !== s.runnerUp).map(esc).join(', ')}</td><td class="small muted">${esc(s.finalsName)}${s.venue ? ` · ${esc(s.venue)}` : ''}</td></tr>`; }).join('')}
+      ${years.map(y => { const s = d.years[y]; const c = s.champion && s.teams[s.champion]; return `<tr><td><b>${seasonLabel(y)}</b></td><td>${s.champion ? school(s.champion) : '<span class="muted">In progress</span>'}</td><td class="num">${c ? rec(c) : ''}</td><td>${s.runnerUp ? school(s.runnerUp, 16) : ''}</td><td class="small">${s.finals.filter(t => t !== s.champion && t !== s.runnerUp).map(esc).join(', ')}</td><td class="small muted">${esc(s.finalsName)}${s.venue ? ` · ${esc(s.venue)}` : ''}</td></tr>`; }).join('')}
     </tbody></table></div></div>
     <div class="card"><h2>${esc(d.sport.name)}: conference champions</h2><p class="small muted" style="margin-top:0">Regular season (shared on a tie) · tournament.</p><div class="table-wrap"><table><thead><tr><th>Year</th>${confs.map(c => `<th>${confLogo(d, c)} ${esc(d.conferences?.[c]?.abbr || c)}</th>`).join('')}</tr></thead><tbody>
-      ${years.map(y => { const s = d.years[y]; return `<tr><td><b>${y}</b></td>${confs.map(c => `<td class="small">${(s.regChamps[c] || []).map(t => `<a class="team-link" href="#/school/${encodeURIComponent(t)}">${esc(t)}</a>`).join(' &amp; ') || '<span class="muted">—</span>'}${s.confTChamps[c] ? `<div class="muted">🏆 ${esc(s.confTChamps[c])}</div>` : ''}</td>`).join('')}</tr>`; }).join('')}
+      ${years.map(y => { const s = d.years[y]; return `<tr><td><b>${seasonLabel(y)}</b></td>${confs.map(c => `<td class="small">${(s.regChamps[c] || []).map(t => `<a class="team-link" href="#/school/${encodeURIComponent(t)}">${esc(t)}</a>`).join(' &amp; ') || '<span class="muted">—</span>'}${s.confTChamps[c] ? `<div class="muted">🏆 ${esc(s.confTChamps[c])}</div>` : ''}</td>`).join('')}</tr>`; }).join('')}
     </tbody></table></div></div>`;
   }
   app.innerHTML = `<div class="section-head"><h1>Champions</h1></div>${tabs}${body}`;
@@ -200,12 +200,12 @@ export function renderSchool(name) {
   app.innerHTML = `<div class="section-head"><h1 class="school-head">${logoImg(name, 40)} ${esc(name)}</h1><span class="muted">${esc(look.mascot || '')}</span></div>
     <div class="kpis">${kpi(x.titles, 'National titles')}${kpi(x.finals, 'Finals-site trips')}${kpi(x.bids, 'National tournaments')}${kpi(x.reg + x.tour, 'Conference titles')}${kpi(x.cups, 'All-Sports Cups')}${kpi(rec(x), 'All-time, every sport')}</div>
     ${cupRows.length ? `<div class="card"><h2>All-Sports Cup</h2><div class="table-wrap"><table><thead><tr><th>Year</th><th class="num">Rank</th><th class="num">Points</th>${dynasties().map(d => `<th class="num" title="${esc(d.sport.name)}">${esc(d.sport.short)}</th>`).join('')}</tr></thead><tbody>
-      ${cupRows.map(c => `<tr><td>${c.y}</td><td class="num"><b>${c.rank}</b> <span class="muted small">of ${c.of}</span></td><td class="num"><b>${c.total}</b></td>${dynasties().map(d => `<td class="num">${c.bySport[d.sport.id] ?? '<span class="muted">—</span>'}</td>`).join('')}</tr>`).join('')}
+      ${cupRows.map(c => `<tr><td>${seasonLabel(c.y)}</td><td class="num"><b>${c.rank}</b> <span class="muted small">of ${c.of}</span></td><td class="num"><b>${c.total}</b></td>${dynasties().map(d => `<td class="num">${c.bySport[d.sport.id] ?? '<span class="muted">—</span>'}</td>`).join('')}</tr>`).join('')}
     </tbody></table></div></div>` : ''}
     ${sportOrder.map(id => { const { d, rows: rs } = bySport[id]; rs.sort((a, b) => b.y - a.y); const tot = rs.reduce((a, r) => ({ w: a.w + r.t.w, l: a.l + r.t.l, t: a.t + r.t.t, ti: a.ti + (r.t.finish === 'champion' ? 1 : 0) }), { w: 0, l: 0, t: 0, ti: 0 });
       return `<div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">${esc(d.sport.name)}</h2><span class="muted small">${rs.length} season${rs.length === 1 ? '' : 's'} · ${rec(tot)}${tot.ti ? ` · ${tot.ti} national title${tot.ti > 1 ? 's' : ''}` : ''}</span></div>
       <div class="table-wrap"><table><thead><tr><th>Year</th><th>Conference</th><th>Coach</th><th class="num">Record</th><th class="num">Conf.</th><th>Titles</th><th>National tournament</th><th class="num">Final rank</th></tr></thead><tbody>
-        ${rs.map(({ y, s, t }) => `<tr><td>${y}${s.complete ? '' : '<span class="muted">*</span>'}</td><td class="small">${t.conf ? `${confLogo(d, t.conf, 16)} ${esc(d.conferences?.[t.conf]?.abbr || t.conf)}` : ''}</td><td class="small">${esc(t.coach || '—')}</td><td class="num">${rec(t)}</td><td class="num">${t.cw + t.cl + t.ct ? confRec(t) : ''}</td>
+        ${rs.map(({ y, s, t }) => `<tr><td>${seasonLabel(y)}${s.complete ? '' : '<span class="muted">*</span>'}</td><td class="small">${t.conf ? `${confLogo(d, t.conf, 16)} ${esc(d.conferences?.[t.conf]?.abbr || t.conf)}` : ''}</td><td class="small">${esc(t.coach || '—')}</td><td class="num">${rec(t)}</td><td class="num">${t.cw + t.cl + t.ct ? confRec(t) : ''}</td>
           <td>${t.regChamp ? '<span class="badge">Reg. season</span> ' : ''}${t.tourneyChamp ? '<span class="badge gold">Tournament</span>' : ''}</td>
           <td>${t.finish ? `${t.finish === 'champion' ? '<b>🏆 National champion</b>' : esc(finishText(d, s, t))}${t.seed ? ` <span class="muted small">(${t.seed} seed${t.natW + t.natL ? `, ${t.natW}-${t.natL}` : ''})</span>` : ''}` : '<span class="muted">—</span>'}</td><td class="num">${t.rank ?? '<span class="muted">NR</span>'}</td></tr>`).join('')}
       </tbody></table></div></div>`; }).join('')}
@@ -224,16 +224,16 @@ export function renderCup() {
     ${rows.map((x, i) => `<tr><td class="num muted">${i + 1}</td><td>${key === 'school' ? school(x.school) : esc(x.conf)}</td><td class="num"><b>${x.total}</b></td>${c.sports.map(s => `<td class="num">${x.bySport[s.id] ? x.bySport[s.id] : '<span class="muted">·</span>'}</td>`).join('')}${key === 'conf' ? `<td class="num">${x.schools}</td>` : ''}</tr>`).join('')}</tbody></table>`;
   app.innerHTML = `<div class="section-head"><h1>AAU All-Sports Cup</h1><span class="muted">Points for every national tournament finish, like the Directors' Cup</span></div>
     <div class="row" style="margin-bottom:14px">
-      <label class="field">Year <select id="cup-year">${years.slice().reverse().map(y => `<option ${y === ui.cupYear ? 'selected' : ''}>${y}</option>`).join('')}</select></label>
+      <label class="field">Year <select id="cup-year">${years.slice().reverse().map(y => `<option value="${y}" ${y === ui.cupYear ? 'selected' : ''}>${seasonLabel(y)}</option>`).join('')}</select></label>
       <div class="seg">${[['all', 'All sports'], ['women', "Women's"], ['men', "Men's"]].map(([k, l]) => `<button class="btn sm ${ui.cupGender === k ? 'primary' : ''}" data-cg="${k}">${l}</button>`).join('')}</div>
       <div class="seg">${[['schools', 'Schools'], ['conferences', 'Conferences']].map(([k, l]) => `<button class="btn sm ${ui.cupView === k ? 'primary' : ''}" data-cv="${k}">${l}</button>`).join('')}</div>
     </div>
-    <div class="card"><h2>${ui.cupYear} ${ui.cupGender === 'women' ? "Women's " : ui.cupGender === 'men' ? "Men's " : ''}standings</h2>
+    <div class="card"><h2>${seasonLabel(ui.cupYear)} ${ui.cupGender === 'women' ? "Women's " : ui.cupGender === 'men' ? "Men's " : ''}standings</h2>
       ${c.sports.length ? `<div class="table-wrap">${ui.cupView === 'schools' ? head(c.schools.filter(x => x.total > 0), 'school') : head(c.conferences, 'conf')}</div><p class="small muted">Sports counted: ${c.sports.map(s => esc(s.name)).join(', ')}. ${ui.cupView === 'schools' ? 'Schools with no points are left out.' : 'A school counts for the conference it played that sport in that year.'}</p>` : '<p class="muted">No finished seasons in these sports this year.</p>'}
     </div>
     <div class="grid" style="margin-top:16px">
       <div class="card"><h2>Cup winners</h2><div class="table-wrap"><table><thead><tr><th>Year</th><th>All sports</th><th>Women's</th><th>Men's</th></tr></thead><tbody>
-        ${winners.map(x => `<tr><td><b>${x.y}</b></td><td>${x.all ? `${school(x.all.school, 16)} <span class="muted small">${x.all.total}</span>` : ''}</td><td>${x.w ? school(x.w.school, 16) : ''}</td><td>${x.m ? school(x.m.school, 16) : ''}</td></tr>`).join('')}
+        ${winners.map(x => `<tr><td><b>${seasonLabel(x.y)}</b></td><td>${x.all ? `${school(x.all.school, 16)} <span class="muted small">${x.all.total}</span>` : ''}</td><td>${x.w ? school(x.w.school, 16) : ''}</td><td>${x.m ? school(x.m.school, 16) : ''}</td></tr>`).join('')}
       </tbody></table></div></div>
       <div class="card"><h2>Scoring</h2><table><tbody>
         <tr><td>National champion</td><td class="num">${CUP_POINTS.champion}</td></tr><tr><td>Runner-up</td><td class="num">${CUP_POINTS['runner-up']}</td></tr>
@@ -252,7 +252,7 @@ export function renderData() {
   const ds = dynasties();
   app.innerHTML = `<div class="section-head"><h1>Data</h1><span class="muted">What's in this browser's history</span></div>
     <div class="card"><h2>Dynasties</h2>${ds.length ? `<div class="table-wrap"><table><thead><tr><th>Sport</th><th>Dynasty</th><th>Seasons</th><th>Last upload</th><th></th></tr></thead><tbody>
-      ${ds.map(d => { const ys = Object.keys(d.years).map(Number).sort((a, b) => a - b); const stale = (d.version || 0) < EXTRACT_VERSION; return `<tr><td>${sportTag(d.sport)}${d.sport.custom ? ' <span class="badge">new sport</span>' : ''}</td><td>${esc(d.name)}<div class="small muted">${esc(d.fileName || '')}</div></td><td>${ys.length ? `${ys[0]}${ys.length > 1 ? `–${ys[ys.length - 1]}` : ''} <span class="muted small">(${ys.length})</span>` : ''}${ys.some(y => !d.years[y].complete) ? ' <span class="badge">in progress</span>' : ''}</td><td class="small">${d.uploadedAt ? new Date(d.uploadedAt).toLocaleString() : ''}${stale ? '<div class="warn-text small">Upload again to refresh</div>' : ''}</td><td><button class="btn sm danger" data-rm="${esc(d.sport.id)}">Remove</button></td></tr>`; }).join('')}
+      ${ds.map(d => { const ys = Object.keys(d.years).map(Number).sort((a, b) => a - b); const stale = (d.version || 0) < EXTRACT_VERSION; return `<tr><td>${sportTag(d.sport)}${d.sport.custom ? ' <span class="badge">new sport</span>' : ''}</td><td>${esc(d.name)}<div class="small muted">${esc(d.fileName || '')}</div></td><td>${ys.length ? `${seasonSpan(ys[0], ys[ys.length - 1])} <span class="muted small">(${ys.length})</span>` : ''}${ys.some(y => !d.years[y].complete) ? ' <span class="badge">in progress</span>' : ''}</td><td class="small">${d.uploadedAt ? new Date(d.uploadedAt).toLocaleString() : ''}${stale ? '<div class="warn-text small">Upload again to refresh</div>' : ''}</td><td><button class="btn sm danger" data-rm="${esc(d.sport.id)}">Remove</button></td></tr>`; }).join('')}
     </tbody></table></div>` : '<p class="muted">Nothing uploaded yet.</p>'}
     ${uploadBox()}
     <label class="check" style="margin-top:8px"><input type="checkbox" id="force-ask" ${ctx.forceAsk ? 'checked' : ''}> Ask which sport each file is, even when it's clear</label></div>

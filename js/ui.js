@@ -1,7 +1,13 @@
 // Shared page pieces: the history, logos, school labels, sport labels.
 
-import { logoFor } from './logos.js?v=20261102232704';
-import { SPORTS } from './sports.js?v=20261102232704';
+import { logoFor } from './logos.js?v=20261103153223';
+import { SPORTS } from './sports.js?v=20261103153223';
+
+// Seasons are academic years: the 2030 season is "2030–31". Years stay
+// numbers in the data; this is only how they read on screen.
+export const seasonLabel = y => (Number.isFinite(+y) && y !== '' && y != null ? `${y}–${String((+y + 1) % 100).padStart(2, '0')}` : String(y ?? ''));
+// A span of seasons: "2030–31" for one, "2030–35" for 2030–31 through 2034–35.
+export const seasonSpan = (a, b) => (a === b ? seasonLabel(a) : `${a}–${String((+b + 1) % 100).padStart(2, '0')}`);
 
 export const ctx = { history: null, render: () => {} };
 export const app = document.getElementById('app');
