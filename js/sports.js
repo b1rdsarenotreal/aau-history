@@ -68,19 +68,16 @@ function lineShape(league) {
   return { len: mode(lens), top: Math.max(...tops), sums, avg: sums ? points / lens.length / 2 : 0 };
 }
 
-// The sport a name or file name mentions ('basketball', 'field-hockey', …),
-// or null.
+// The one sport a name or file name mentions ('basketball', 'field-hockey',
+// …), or null when it names none or several ("softball-baseball").
 export function sportWord(text) {
   const t = String(text || '').toLowerCase().replace(/[^a-z]+/g, ' ');
-  if (/volleyball/.test(t)) return 'volleyball';
-  if (/basketball/.test(t)) return 'basketball';
-  if (/lacrosse/.test(t)) return 'lacrosse';
-  if (/field hockey|fhockey/.test(t)) return 'field-hockey';
-  if (/hockey/.test(t)) return 'hockey';
-  if (/soccer/.test(t)) return 'soccer';
-  if (/softball/.test(t)) return 'softball';
-  if (/baseball/.test(t)) return 'baseball';
-  return null;
+  const found = [
+    ['volleyball', /volleyball/], ['basketball', /basketball/], ['lacrosse', /lacrosse/],
+    ['field-hockey', /field hockey|fhockey/], ['hockey', /(^|[^d] )hockey|^hockey/], ['soccer', /soccer/],
+    ['softball', /softball/], ['baseball', /baseball/],
+  ].filter(([, re]) => re.test(t)).map(([w]) => w);
+  return found.length === 1 ? found[0] : null;
 }
 export const sportFamily = sport => sport.custom ? null : sport.id.replace(/^[wm]-/, '');
 
