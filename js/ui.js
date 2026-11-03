@@ -1,7 +1,7 @@
 // Shared page pieces: the history, logos, school labels, sport labels.
 
-import { logoFor } from './logos.js?v=20261102231628';
-import { SPORTS } from './sports.js?v=20261102231628';
+import { logoFor } from './logos.js?v=20261102232704';
+import { SPORTS } from './sports.js?v=20261102232704';
 
 export const ctx = { history: null, render: () => {} };
 export const app = document.getElementById('app');
@@ -56,10 +56,23 @@ export function logoImg(name, size = 20) {
 export const schoolHref = name => `#/school/${encodeURIComponent(name)}`;
 export const school = (name, size = 18) => (name ? `<span class="team">${logoImg(name, size)}<a class="team-link" href="${schoolHref(name)}">${esc(name)}</a></span>` : '<span class="muted">—</span>');
 
+// Conference logos the owner later swapped from drawn ones to links (the same
+// list as the dynasty apps' CONF_LOGO_LINKS): older backups still name the
+// drawn file.
+const CONF_LOGO_LINKS = {
+  bigten: 'https://content.sportslogos.net/logos/153/4661/full/big_ten_conference_logo_primary_20115933.png',
+  ivy: 'https://content.sportslogos.net/logos/153/4824/full/ivy_league_logo_primary_2019_sportslogosnet-9024.png',
+  metro: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/METRO_Primary_LtBG.png/500px-METRO_Primary_LtBG.png',
+  pac10: 'https://content.sportslogos.net/logos/153/4945/full/pacific-10_conference_logo_wordmark_1995_sportslogosnet-1134.png',
+  uaa: 'https://dbukjj6eu5tsf.cloudfront.net/uaasports.info/images/responsive_2023/logo-main.svg',
+};
+const confLogoUrl = url => { const m = /^img\/conf\/(\w+)\.svg$/.exec(url || ''); return (m && CONF_LOGO_LINKS[m[1]]) || url; };
+
 export function confLogo(d, c, size = 18) {
   const info = d?.conferences?.[c] || {};
-  if (info.logo) return `<img src="${esc(info.logo)}" alt="" width="${size}" height="${size}" style="vertical-align:middle;object-fit:contain">`;
-  return `<span class="tbadge" style="width:${size}px;height:${size}px;font-size:${size * 0.34}px;background:${esc(info.color || '#555')};color:#fff">${esc((info.abbr || c).slice(0, 4))}</span>`;
+  const badge = `<span class="tbadge" style="width:${size}px;height:${size}px;font-size:${size * 0.34}px;background:${esc(info.color || '#555')};color:#fff">${esc((info.abbr || c).slice(0, 4))}</span>`;
+  if (info.logo) return `<img src="${esc(confLogoUrl(info.logo))}" alt="" width="${size}" height="${size}" style="vertical-align:middle;object-fit:contain" data-fb="${esc(badge)}" onerror="this.outerHTML=this.dataset.fb">`;
+  return badge;
 }
 export const sportTag = sport => `<span class="badge sport-${sport.gender}">${esc(sport.name)}</span>`;
 export const rec = r => `${r.w}-${r.l}${r.t ? `-${r.t}` : ''}`;
