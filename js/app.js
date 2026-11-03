@@ -1,9 +1,9 @@
 // App shell: loading the history, the top bar and page routing.
 
-import { loadHistory } from './store.js?v=20261102230101';
-import { loadLogoTable } from './logos.js?v=20261102230101';
-import { ctx, app, esc } from './ui.js?v=20261102230101';
-import { renderHome, renderChampions, renderSchools, renderSchool, renderCup, renderData } from './views.js?v=20261102230101';
+import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261102231502';
+import { loadLogoTable } from './logos.js?v=20261102231502';
+import { ctx, app, esc } from './ui.js?v=20261102231502';
+import { renderHome, renderChampions, renderSchools, renderSchool, renderCup, renderData } from './views.js?v=20261102231502';
 
 const VIEWS = { home: 'Home', champions: 'Champions', schools: 'Schools', cup: 'All-Sports Cup', data: 'Data' };
 const SUBVIEWS = { school: 'schools' };
@@ -27,6 +27,11 @@ window.addEventListener('hashchange', () => { const v = currentView(); render();
 async function boot() {
   ctx.render = render;
   ctx.history = await loadHistory();
+  const removed = repairHistory(ctx.history);
+  if (removed.length) {
+    await saveHistory(ctx.history);
+    ctx.notice = removed.map(r => `Your ${r.name} history had another sport's backup in it (${r.fileName}), so it was cleared. Upload your ${r.name} backup again, and ${r.fileName} too.`).join(' ');
+  }
   render();
   // Logos load in the background; draw again once they're in.
   loadLogoTable().then(render).catch(() => {});

@@ -40,25 +40,49 @@ export function customSport(name, gender) {
   return { id, name, short: name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 4), gender, finals: 'National Championship', custom: true };
 }
 
-// Typical periods in a regular-season line score, and the largest score in
-// a period: volleyball has 3–5 sets of up to 25+ points; softball 7 innings,
-// baseball 9; soccer 2 halves; field hockey 4 quarters; ice hockey 3
-// periods. Basketball (2 halves or 4 quarters of many points) and lacrosse
-// (4 quarters, like field hockey) are told apart by `league.sport`.
+// What the regular-season line scores look like: the usual number of periods,
+// the largest score in a period, how often R is the sum of the line (every
+// sport but volleyball, whose R is sets won) and the average score per team.
+// Volleyball has 3–5 sets of up to 25+ points; softball 7 innings, baseball
+// 9; soccer 2 halves; ice hockey 3 periods; basketball 2 halves or 4
+// quarters of many points; field hockey and lacrosse 4 quarters (lacrosse
+// about 11 goals a team, field hockey about 2–3).
 function lineShape(league) {
   const lens = [], tops = [];
+  let summed = 0, points = 0;
   for (const s of Object.values(league.seasons || {})) {
     for (const g of s.games || []) {
       if (g.type !== 'regular' || !g.final || !Array.isArray(g.homeLine) || !g.homeLine.length) continue;
+      const line = g.homeLine.map(Number).filter(Number.isFinite);
       lens.push(g.homeLine.length);
-      tops.push(Math.max(...g.homeLine.map(Number).filter(Number.isFinite), ...(g.awayLine || []).map(Number).filter(Number.isFinite)));
+      tops.push(Math.max(...line, ...(g.awayLine || []).map(Number).filter(Number.isFinite)));
+      const sum = line.reduce((a, b) => a + b, 0);
+      if (Number(g.homeR) === sum) summed++;
+      points += (Number(g.homeR) || 0) + (Number(g.awayR) || 0);
       if (lens.length > 400) break;
     }
   }
   if (!lens.length) return null;
   const mode = arr => { const c = {}; for (const x of arr) c[x] = (c[x] || 0) + 1; return +Object.entries(c).sort((a, b) => b[1] - a[1])[0][0]; };
-  return { len: mode(lens), top: Math.max(...tops) };
+  const sums = summed / lens.length > 0.5;
+  return { len: mode(lens), top: Math.max(...tops), sums, avg: sums ? points / lens.length / 2 : 0 };
 }
+
+// The sport a name or file name mentions ('basketball', 'field-hockey', …),
+// or null.
+export function sportWord(text) {
+  const t = String(text || '').toLowerCase().replace(/[^a-z]+/g, ' ');
+  if (/volleyball/.test(t)) return 'volleyball';
+  if (/basketball/.test(t)) return 'basketball';
+  if (/lacrosse/.test(t)) return 'lacrosse';
+  if (/field hockey|fhockey/.test(t)) return 'field-hockey';
+  if (/hockey/.test(t)) return 'hockey';
+  if (/soccer/.test(t)) return 'soccer';
+  if (/softball/.test(t)) return 'softball';
+  if (/baseball/.test(t)) return 'baseball';
+  return null;
+}
+export const sportFamily = sport => sport.custom ? null : sport.id.replace(/^[wm]-/, '');
 
 // Which sport a backup is: { sport, sure }. `sure` is false when it had to
 // guess; the upload screen lets the commissioner pick another.
@@ -72,14 +96,16 @@ export function detectSport(league) {
   const tagged = { basketball: 'basketball', lacrosse: 'lacrosse', hockey: 'hockey' }[league?.sport];
   if (tagged) return { sport: SPORTS[`${men ? 'm' : 'w'}-${tagged}`], sure: true };
   const shape = lineShape(league);
+  const pick = fam => SPORTS[fam] || SPORTS[`${men ? 'm' : 'w'}-${fam}`];
   if (shape) {
-    if (shape.len === 2 && shape.top >= 15) return { sport: SPORTS[men ? 'm-basketball' : 'w-basketball'], sure: true };
-    if (shape.len === 3 && shape.top < 10) return { sport: SPORTS[men ? 'm-hockey' : 'w-hockey'], sure: true };
-    if (shape.top >= 15 && shape.len >= 3 && shape.len <= 5) return { sport: SPORTS[men ? 'm-volleyball' : 'w-volleyball'], sure: true };
-    if (shape.len === 2) return { sport: SPORTS[men ? 'm-soccer' : 'w-soccer'], sure: true };
-    if (shape.len === 4 && shape.top < 15) return { sport: SPORTS['field-hockey'], sure: true };
+    if (!shape.sums && shape.top >= 15 && shape.len >= 3 && shape.len <= 5) return { sport: pick('volleyball'), sure: true };
+    if (shape.sums && shape.avg >= 35 && (shape.len === 2 || shape.len === 4)) return { sport: pick('basketball'), sure: true };
     if (shape.len === 7) return { sport: SPORTS.softball, sure: true };
     if (shape.len === 9) return { sport: SPORTS.baseball, sure: true };
+    if (shape.len === 3 && shape.top < 10) return { sport: pick('hockey'), sure: true };
+    if (shape.len === 2 && shape.top < 10) return { sport: pick('soccer'), sure: true };
+    if (shape.len === 4 && shape.avg >= 7) return { sport: pick('lacrosse'), sure: true };
+    if (shape.len === 4 && shape.top < 10) return { sport: SPORTS['field-hockey'], sure: true };
   }
   // No results yet (or a new sport): go by the name.
   if (/volleyball/.test(name)) return { sport: SPORTS[men ? 'm-volleyball' : 'w-volleyball'], sure: true };

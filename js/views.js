@@ -1,10 +1,10 @@
 // Pages: home, champions, schools, a school, the all-sports cup, and data.
 
-import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec } from './ui.js?v=20261102230101';
-import { SPORTS, detectSport, customSport, isDynastyBackup } from './sports.js?v=20261102230101';
-import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261102230101';
-import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261102230101';
-import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261102230101';
+import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec } from './ui.js?v=20261102231502';
+import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261102231502';
+import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261102231502';
+import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261102231502';
+import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261102231502';
 
 const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '' };
 const finishText = (d, s, t) => (t.finish === 'finals' ? s.finalsName : FINISH_LABEL[t.finish] || '');
@@ -31,7 +31,9 @@ export async function handleFiles(files) {
     }
     if (!isDynastyBackup(data)) { toast(`${file.name} isn't a dynasty backup (it has no seasons).`, true); continue; }
     const found = detectSport(data);
-    const sport = found.sure && !ctx.forceAsk ? found.sport : await askSport(file.name, found.sport);
+    // A file name that names another sport: ask rather than guess.
+    const named = sportWord(file.name), clash = named && sportFamily(found.sport) && named !== sportFamily(found.sport);
+    const sport = found.sure && !clash && !ctx.forceAsk ? found.sport : await askSport(file.name, found.sport);
     if (!sport) continue;
     const ext = extractDynasty(data, sport);
     if (!Object.keys(ext.years).length) { toast(`${file.name} has no played matches yet, so there's no history to add.`, true); continue; }
@@ -78,7 +80,7 @@ function uploadBox(big = false) {
   return `<label class="drop${big ? ' big' : ''}" id="drop">
     <input type="file" id="up-file" accept="application/json,.json" multiple hidden>
     <b>Upload dynasty backups</b>
-    <span class="small muted">Drop the backup files here or click to choose them (Settings → Download backup in each dynasty: volleyball, softball &amp; baseball, soccer, field hockey, or any new sport). Upload again after each season; newer files replace older ones.</span>
+    <span class="small muted">Drop the backup files here or click to choose them (Settings → Download backup in each dynasty: volleyball, soccer, field hockey, basketball, ice hockey, softball &amp; baseball, lacrosse, or any new sport). Upload again after each season; newer files replace older ones.</span>
   </label>`;
 }
 export function bindUpload(root = app) {
@@ -96,7 +98,7 @@ export function renderHome() {
   const ds = dynasties();
   if (!ds.length) {
     app.innerHTML = `<div class="section-head"><h1>AAU History</h1></div>
-      <div class="card stack"><p style="margin:0">The record book for every AAU dynasty: national and conference champions in every sport, every school's history across sports, and the All-Sports Cup.</p>${uploadBox(true)}</div>`;
+      ${ctx.notice ? `<div class="card" style="margin-bottom:16px;border-left:4px solid #d97706"><b>Fixed a mix-up.</b> ${esc(ctx.notice)}</div>` : ''}<div class="card stack"><p style="margin:0">The record book for every AAU dynasty: national and conference champions in every sport, every school's history across sports, and the All-Sports Cup.</p>${uploadBox(true)}</div>`;
     return bindUpload();
   }
   const years = cupYears(ctx.history), last = years[years.length - 1];
@@ -107,6 +109,7 @@ export function renderHome() {
   const topTitles = Object.entries(titles).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 8);
   const seasons = ds.reduce((a, d) => a + Object.keys(d.years).length, 0);
   app.innerHTML = `<div class="section-head"><h1>AAU History</h1><span class="muted">${ds.length} sport${ds.length === 1 ? '' : 's'} · ${seasons} seasons · ${allSchools().length} schools</span></div>
+    ${ctx.notice ? `<div class="card" style="margin-bottom:16px;border-left:4px solid #d97706"><b>Fixed a mix-up.</b> ${esc(ctx.notice)}</div>` : ''}
     ${cup?.schools.length ? `<div class="banner" style="background:linear-gradient(120deg, ${esc(schoolLook(cup.schools[0].school).color || '#0b3c5d')}, #15171c)"><span class="trophy">🏆</span><div><div class="small" style="opacity:.8">${last} AAU All-Sports Cup</div><div class="big">${esc(cup.schools[0].school)}</div><div class="small" style="opacity:.8">${cup.schools[0].total} points · ${cup.schools[1] ? `${esc(cup.schools[1].school)} ${cup.schools[1].total}` : ''}</div></div></div><div style="height:16px"></div>` : ''}
     <div class="grid">
       <div class="card"><h2>Latest national champions</h2><div class="table-wrap"><table><tbody>

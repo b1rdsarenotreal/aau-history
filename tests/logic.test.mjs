@@ -6,7 +6,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { detectSport, isDynastyBackup, SPORTS } from '../js/sports.js';
 import { extractDynasty, resultFor, winnerOf } from '../js/extract.js';
-import { emptyHistory, mergeDynasty, isHistoryBackup } from '../js/store.js';
+import { emptyHistory, mergeDynasty, isHistoryBackup, repairHistory } from '../js/store.js';
 import { cupStandings, cupYears, finishPoints } from '../js/cup.js';
 
 const t0 = Date.now();
@@ -33,11 +33,13 @@ check('every dynasty backup is recognized as its sport', () => {
   // A new sport with no results yet: a guess, flagged as unsure.
   const unknown = detectSport({ name: "AAU Men's Water Polo", side: 'men', seasons: { 2030: { teams: {}, games: [] } } });
   assert.ok(!unknown.sure && unknown.sport.custom && unknown.sport.gender === 'men' && /Water Polo/.test(unknown.sport.name));
-  // Lacrosse and field hockey both have four low-scoring quarters: the sport tag tells them apart.
-  const untagged = { ...backups['lacrosse-women'], sport: undefined, name: 'AAU Women\'s Lacrosse' };
-  assert.equal(detectSport(untagged).sport.id, 'field-hockey', 'without the tag a lacrosse file looks like field hockey by its line scores');
-  assert.equal(detectSport({ ...backups['basketball-men'], sport: undefined, name: 'My League' }).sport.id, 'm-basketball', 'men\'s basketball by its halves');
-  assert.equal(detectSport({ ...backups['hockey-men'], sport: undefined, name: 'My League' }).sport.id, 'm-hockey', 'hockey by its three periods');
+  // Backups saved before the apps tagged their sport, with a plain name:
+  // every sport is told by its line scores (women's basketball's four
+  // quarters aren't volleyball sets; lacrosse scores more than field hockey).
+  for (const [k, lg] of Object.entries(backups)) {
+    const want = detectSport(lg).sport.id;
+    assert.equal(detectSport({ ...lg, sport: undefined, name: 'My League' }).sport.id, want, `${k} without its tag`);
+  }
   assert.ok(!isDynastyBackup({ schools: {} }));
 });
 
@@ -124,6 +126,18 @@ check('a season in progress is kept but not scored', () => {
   assert.ok(!e.years[2031].complete);
   const h = emptyHistory(); mergeDynasty(h, e);
   assert.deepEqual(cupYears(h), [2030]);
+});
+
+check('a backup filed under the wrong sport is cleared', () => {
+  const h = emptyHistory();
+  const vb = backups['volleyball-women'], bb = backups['basketball-women'];
+  mergeDynasty(h, extractDynasty(vb, SPORTS['w-volleyball']), { fileName: 'AAU-Volleyball-2030.json' });
+  mergeDynasty(h, extractDynasty(bb, SPORTS['w-basketball']), { fileName: 'AAU-Women-s-Basketball-2030.json' });
+  assert.deepEqual(repairHistory(h), [], 'a right history is left alone');
+  mergeDynasty(h, extractDynasty(bb, SPORTS['w-volleyball']), { fileName: 'AAU-Women-s-Basketball-2030.json' });
+  const removed = repairHistory(h);
+  assert.deepEqual(removed.map(r => r.name), ["Women's Volleyball"]);
+  assert.ok(!h.dynasties['w-volleyball'] && h.dynasties['w-basketball']);
 });
 
 check('the history stays small', () => {

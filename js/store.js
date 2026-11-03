@@ -3,6 +3,7 @@
 // backup again replaces that sport's seasons with the new ones and keeps any
 // older seasons the new file no longer has. Download/Restore move it.
 
+import { sportWord, sportFamily } from './sports.js?v=20261102231502';
 const DB = 'aau-history', STORE = 'kv', KEY = 'aau-history';
 
 function idb() {
@@ -58,6 +59,19 @@ export function mergeDynasty(h, ext, meta = {}) {
     uploadedAt: new Date().toISOString(), fileName: meta.fileName || old?.fileName || '',
   };
   return { added, updated, kept };
+}
+
+// A backup filed under the wrong sport (an older AAU History took
+// untagged women's basketball for volleyball): an entry whose file name names
+// another sport is removed, so both backups can be uploaded again. Returns
+// what was removed.
+export function repairHistory(h) {
+  const removed = [];
+  for (const [id, d] of Object.entries(h?.dynasties || {})) {
+    const fam = sportFamily(d.sport), named = sportWord(d.fileName);
+    if (fam && named && named !== fam) { removed.push({ name: d.sport.name, fileName: d.fileName }); delete h.dynasties[id]; }
+  }
+  return removed;
 }
 
 export function exportHistory(h) {
