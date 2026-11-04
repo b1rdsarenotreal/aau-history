@@ -1,7 +1,7 @@
 // Shared page pieces: the history, logos, school labels, sport labels.
 
-import { logoFor } from './logos.js?v=20261104001044';
-import { SPORTS } from './sports.js?v=20261104001044';
+import { logoFor } from './logos.js?v=20261104002323';
+import { SPORTS } from './sports.js?v=20261104002323';
 
 // Seasons are academic years: the 2030 season is "2030–31". Years stay
 // numbers in the data; this is only how they read on screen.
