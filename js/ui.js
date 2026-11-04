@@ -1,7 +1,12 @@
 // Shared page pieces: the history, logos, school labels, sport labels.
 
-import { logoFor } from './logos.js?v=20261104004329';
-import { SPORTS } from './sports.js?v=20261104004329';
+import { logoFor } from './logos.js?v=20261104005741';
+import { SPORTS } from './sports.js?v=20261104005741';
+
+// Logo files in this app (img/conf/) carry this release's version, like the
+// scripts do, so a redrawn logo shows right away instead of a cached copy.
+const RELEASE = (() => { try { return new URL(import.meta.url).searchParams.get('v') || ''; } catch { return ''; } })();
+const assetUrl = u => (RELEASE && /^img\//.test(u || '') ? `${u}${u.includes('?') ? '&' : '?'}v=${RELEASE}` : u);
 
 // Seasons are academic years: the 2030 season is "2030–31". Years stay
 // numbers in the data; this is only how they read on screen.
@@ -77,7 +82,7 @@ const confLogoUrl = url => { const m = /^img\/conf\/(\w+)\.svg$/.exec(url || '')
 export function confLogo(d, c, size = 18) {
   const info = d?.conferences?.[c] || {};
   const badge = `<span class="tbadge" style="width:${size}px;height:${size}px;font-size:${size * 0.34}px;background:${esc(info.color || '#555')};color:#fff">${esc((info.abbr || c).slice(0, 4))}</span>`;
-  if (info.logo) return `<img src="${esc(confLogoUrl(info.logo))}" alt="" width="${size}" height="${size}" style="vertical-align:middle;object-fit:contain" data-fb="${esc(badge)}" onerror="this.outerHTML=this.dataset.fb">`;
+  if (info.logo) return `<img src="${esc(assetUrl(confLogoUrl(info.logo)))}" alt="" width="${size}" height="${size}" style="vertical-align:middle;object-fit:contain" data-fb="${esc(badge)}" onerror="this.outerHTML=this.dataset.fb">`;
   return badge;
 }
 export const sportTag = sport => `<span class="badge sport-${sport.gender}">${esc(sport.name)}</span>`;
