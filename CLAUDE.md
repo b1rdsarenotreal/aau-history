@@ -24,6 +24,9 @@ dynasty apps aren't made from here unless the owner asks.
   coach, conference titles, national tournament finish and wins, final poll
   rank, champions). Sport rules live in the profile: `ties` (soccer, ice
   hockey) and `pkWins` (field hockey). Bump `EXTRACT_VERSION` when the summary changes.
+- The Schools page shows a badge per school in its colors (A–Z or by home
+  conference: the one it plays most sports in, `homeConference`), or the
+  stats table.
 - School pages (`js/school.js`) are like a team site: a header in the
   school's colors, a tab per sport, banners (national titles in gold;
   regular-season and tournament conference titles with the conference's

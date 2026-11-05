@@ -1019,3 +1019,16 @@ tr.cur td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
   .sch-logo .tbadge { font-size: 16px !important; }
   .show-sm { display: block; margin-top: 2px; }
 }
+
+/* Schools page: a badge per school in its colors */
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
+.school-badge { --c1: #33424d; --c2: #fff; --hi: #fff; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 10px 14px; border-radius: 12px; text-decoration: none; text-align: center; color: var(--hi);
+  background: linear-gradient(150deg, var(--c1) 0 64%, color-mix(in srgb, var(--c1) 80%, #000) 64% 100%); box-shadow: inset 0 -5px 0 var(--c2), var(--shadow); transition: transform .15s, box-shadow .15s; }
+.school-badge:hover { transform: translateY(-2px); box-shadow: inset 0 -5px 0 var(--c2), 0 6px 16px rgba(0,0,0,.18); }
+.school-badge .sb-logo { width: 60px; height: 60px; display: grid; place-items: center; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.school-badge .sb-name { font-family: var(--display); font-weight: 800; font-size: 19px; line-height: 1.05; text-transform: uppercase; letter-spacing: .01em; }
+.school-badge .sb-mascot { font-size: 12px; font-weight: 600; opacity: .85; min-height: 1em; }
+.conf-group + .conf-group { margin-top: 22px; }
+.conf-group-head { display: flex; align-items: center; gap: 10px; font-size: 22px; padding-bottom: 8px; margin-bottom: 12px; border-bottom: 2px solid var(--line); }
+.conf-group-head img, .conf-group-head .tbadge { flex: none; }
+@media (max-width: 640px) { .badge-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .school-badge .sb-name { font-size: 16px; } }

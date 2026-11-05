@@ -1,7 +1,7 @@
 // Shared page pieces: the history, logos, school labels, sport labels.
 
-import { logoFor } from './logos.js?v=20261105152646';
-import { SPORTS } from './sports.js?v=20261105152646';
+import { logoFor } from './logos.js?v=20261105153800';
+import { SPORTS } from './sports.js?v=20261105153800';
 
 // Logo files in this app (img/conf/) carry this release's version, like the
 // scripts do, so a redrawn logo shows right away instead of a cached copy.
@@ -49,7 +49,7 @@ export function allSchools() {
   return [...set].sort((a, b) => a.localeCompare(b));
 }
 
-function readableOn(bg) {
+export function readableOn(bg) {
   const m = /^#?([0-9a-f]{6})$/i.exec(bg || '');
   if (!m) return '#fff';
   const n = parseInt(m[1], 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;

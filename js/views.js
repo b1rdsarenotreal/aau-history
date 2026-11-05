@@ -1,12 +1,12 @@
 // Pages: home, champions, schools, a school, the all-sports cup, and data.
 
-import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105152646';
-import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261105152646';
-import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261105152646';
-import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261105152646';
-import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261105152646';
+import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, readableOn, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105153800';
+import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261105153800';
+import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261105153800';
+import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261105153800';
+import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261105153800';
 
-const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '' };
+const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '', schoolView: 'badges', schoolSort: 'az' };
 const finishText = (d, s, t) => (t.finish === 'finals' ? s.finalsName : FINISH_LABEL[t.finish] || '');
 
 // ---------- uploading ----------
@@ -174,16 +174,55 @@ export function schoolTotals(name) {
   return x;
 }
 
+// A school's home conference: the one it plays in for the most sports in each
+// sport's latest season (ties: alphabetical), with a dynasty that knows the
+// conference's logo. Null for a school with no conference.
+function homeConference(name) {
+  const count = {}, where = {};
+  for (const d of dynasties()) {
+    const ys = Object.keys(d.years).map(Number).filter(y => d.years[y].teams[name]).sort((a, b) => b - a);
+    const c = ys.length ? d.years[ys[0]].teams[name].conf : null;
+    if (!c || c === 'Independent') continue;
+    count[c] = (count[c] || 0) + 1; where[c] ||= d;
+  }
+  const best = Object.keys(count).sort((a, b) => count[b] - count[a] || a.localeCompare(b))[0];
+  return best ? { conf: best, d: where[best] } : null;
+}
+function schoolBadge(n) {
+  const look = schoolLook(n);
+  const c1 = /^#[0-9a-f]{6}$/i.test(look.color || '') ? look.color : '#33424d';
+  let c2 = /^#[0-9a-f]{6}$/i.test(look.altColor || '') ? look.altColor : '#ffffff';
+  if (c2.toLowerCase() === c1.toLowerCase()) c2 = '#ffffff';
+  return `<a class="school-badge" href="#/school/${encodeURIComponent(n)}" style="--c1:${c1};--c2:${c2};--hi:${readableOn(c1)}">
+    <span class="sb-logo">${logoImg(n, 44)}</span><span class="sb-name">${esc(n)}</span><span class="sb-mascot">${esc(look.mascot || '')}</span></a>`;
+}
+
 export function renderSchools() {
   const names = allSchools();
   if (!names.length) return renderHome();
-  const totals = Object.fromEntries(names.map(n => [n, schoolTotals(n)]));
   const f = ui.schoolFilter.toLowerCase();
-  const list = names.filter(n => !f || n.toLowerCase().includes(f)).sort((a, b) => totals[b].titles - totals[a].titles || totals[b].finals - totals[a].finals || a.localeCompare(b));
-  app.innerHTML = `<div class="section-head"><h1>Schools</h1><span class="muted">${names.length} schools in ${dynasties().length} sports</span><span class="spacer"></span><input type="search" id="sc-find" placeholder="Find a school" value="${esc(ui.schoolFilter)}" style="min-width:200px"></div>
-    <div class="card"><div class="table-wrap"><table><thead><tr><th>School</th><th class="num">Sports</th><th class="num" title="National titles">Titles</th><th class="num" title="Reached the finals site (Final Four, Frozen Four, World Series, College Cup)">Finals</th><th class="num" title="National tournament appearances">Bids</th><th class="num" title="Regular-season conference titles">Conf.</th><th class="num" title="Conference tournament titles">Conf. T</th><th class="num" title="All-Sports Cup wins">Cups</th><th class="num">All-time W-L</th></tr></thead><tbody>
+  const shown = names.filter(n => !f || n.toLowerCase().includes(f) || (schoolLook(n).mascot || '').toLowerCase().includes(f));
+  const seg = (key, opts) => `<div class="seg">${opts.map(([v, l]) => `<button class="btn sm ${ui[key] === v ? 'primary' : ''}" data-ui="${key}" data-v="${v}">${l}</button>`).join('')}</div>`;
+  let body;
+  if (ui.schoolView === 'table') {
+    const totals = Object.fromEntries(shown.map(n => [n, schoolTotals(n)]));
+    const list = [...shown].sort((a, b) => totals[b].titles - totals[a].titles || totals[b].finals - totals[a].finals || a.localeCompare(b));
+    body = `<div class="card"><div class="table-wrap"><table><thead><tr><th>School</th><th class="num">Sports</th><th class="num" title="National titles">Titles</th><th class="num" title="Reached the finals site (Final Four, Frozen Four, World Series, College Cup)">Finals</th><th class="num" title="National tournament appearances">Bids</th><th class="num" title="Regular-season conference titles">Conf.</th><th class="num" title="Conference tournament titles">Conf. T</th><th class="num" title="All-Sports Cup wins">Cups</th><th class="num">All-time W-L</th></tr></thead><tbody>
       ${list.map(n => { const x = totals[n]; return `<tr><td>${school(n)}</td><td class="num">${x.sports.size}</td><td class="num"><b>${x.titles || ''}</b></td><td class="num">${x.finals || ''}</td><td class="num">${x.bids || ''}</td><td class="num">${x.reg || ''}</td><td class="num">${x.tour || ''}</td><td class="num">${x.cups || ''}</td><td class="num">${rec(x)}</td></tr>`; }).join('')}
     </tbody></table></div></div>`;
+  } else if (ui.schoolSort === 'conf') {
+    const groups = {};
+    for (const n of shown) { const h = homeConference(n); const k = h?.conf || ''; (groups[k] ||= { h, list: [] }).list.push(n); }
+    const keys = Object.keys(groups).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b));
+    body = keys.map(k => { const { h, list } = groups[k];
+      return `<section class="conf-group"><h2 class="conf-group-head">${h ? `${confLogo(h.d, h.conf, 30)} ${esc(h.conf)}` : 'No conference'} <span class="muted small">${list.length} school${list.length > 1 ? 's' : ''}</span></h2>
+        <div class="badge-grid">${list.map(schoolBadge).join('')}</div></section>`; }).join('');
+  } else body = `<div class="badge-grid">${shown.map(schoolBadge).join('')}</div>`;
+  app.innerHTML = `<div class="section-head"><h1>Schools</h1><span class="muted">${names.length} schools in ${dynasties().length} sports</span><span class="spacer"></span>
+      ${ui.schoolView === 'badges' ? seg('schoolSort', [['az', 'A–Z'], ['conf', 'By conference']]) : ''}${seg('schoolView', [['badges', 'Badges'], ['table', 'Table']])}
+      <input type="search" id="sc-find" placeholder="Find a school" value="${esc(ui.schoolFilter)}" style="min-width:200px"></div>
+    ${shown.length ? body : '<div class="empty">No school matches that.</div>'}`;
+  $$('[data-ui]').forEach(b => (b.onclick = () => { ui[b.dataset.ui] = b.dataset.v; renderSchools(); }));
   const find = $('#sc-find');
   find.oninput = () => { ui.schoolFilter = find.value; const pos = find.selectionStart; renderSchools(); const el = $('#sc-find'); el.focus(); el.setSelectionRange(pos, pos); };
 }

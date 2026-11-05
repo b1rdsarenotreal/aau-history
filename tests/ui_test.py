@@ -67,10 +67,17 @@ with sync_playwright() as p:
     assert "conference champions" in t and "College Cup" in t
     shot(pg, "c-champions-soccer")
 
-    t = visit(pg, "#/schools", "d-schools")
-    assert "Stanford" in t and "Caltech" in t
+    # Badges show names in capitals, so compare without case.
+    t = visit(pg, "#/schools", "d-schools").lower()
+    assert "stanford" in t and "caltech" in t
     pg.fill("#sc-find", "stan"); pg.wait_for_timeout(200)
-    assert "Stanford" in pg.locator("#app").inner_text() and "Caltech" not in pg.locator("#app").inner_text()
+    t = pg.locator("#app").inner_text().lower()
+    assert "stanford" in t and "caltech" not in t
+    pg.click('[data-ui="schoolSort"][data-v="conf"]'); pg.wait_for_timeout(200)
+    assert pg.locator(".conf-group-head").count() >= 1
+    pg.click('[data-ui="schoolView"][data-v="table"]'); pg.wait_for_timeout(200)
+    assert "stanford" in pg.locator("#app").inner_text().lower()
+    pg.click('[data-ui="schoolView"][data-v="badges"]'); pg.fill("#sc-find", ""); pg.wait_for_timeout(200)
     champ = champs["softball-softball.json"]
     t = visit(pg, f"#/school/{champ}", "e-school")
     assert "Softball" in t and "National champion" in t and "All-Sports Cup" in t
