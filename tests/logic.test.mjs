@@ -140,8 +140,10 @@ check('a backup filed under the wrong sport is cleared', () => {
   assert.ok(!h.dynasties['w-volleyball'] && h.dynasties['w-basketball']);
 });
 
+// Each season keeps its summary and, since version 2, its games for the
+// school pages' schedules: about 60 KB a season.
 check('the history stays small', () => {
-  assert.ok(JSON.stringify(H).length < 1200000, `${JSON.stringify(H).length} bytes for 26 seasons`);
+  assert.ok(JSON.stringify(H).length < 26 * 100000, `${JSON.stringify(H).length} bytes for 26 seasons`);
 });
 
 console.log(`${n} checks ok in ${Date.now() - t0} ms`);

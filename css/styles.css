@@ -927,3 +927,89 @@ button.bx-sg:hover { border-color: var(--muted); }
 .badge.sport-women { background: #f3e6f2; color: #7a2a6e; }
 .badge.sport-men { background: #e3edf8; color: #1f4f86; }
 .champ-grid td { vertical-align: top; min-width: 140px; }
+
+/* ---------- school pages: a team site ---------- */
+.sch-hero { --c1: #33424d; --c2: #fff; --hi: #fff; position: relative; overflow: hidden; display: flex; align-items: center; gap: 18px; padding: 22px 24px; border-radius: 14px 14px 0 0; color: var(--hi);
+  background: linear-gradient(115deg, var(--c1) 0 62%, color-mix(in srgb, var(--c1) 82%, #000) 62% 100%); box-shadow: inset 0 -6px 0 var(--c2); }
+.sch-hero::after { content: ''; position: absolute; right: -40px; top: -30px; width: 260px; height: 260px; border-radius: 50%; border: 18px solid color-mix(in srgb, var(--c2) 22%, transparent); pointer-events: none; }
+.sch-logo { flex: none; width: 96px; height: 96px; display: grid; place-items: center; border-radius: 50%; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+.sch-id h1 { margin: 0; font-size: 46px; color: var(--hi); text-transform: uppercase; letter-spacing: .01em; }
+.sch-sub { font-weight: 600; opacity: .9; margin-top: 4px; }
+.sch-tabs { display: flex; gap: 2px; overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 12px 12px; padding: 0 8px; margin-bottom: 16px; scrollbar-width: thin; }
+.sch-tabs a { flex: none; padding: 11px 12px 9px; font-weight: 600; font-size: 14px; color: var(--muted); text-decoration: none; border-bottom: 3px solid transparent; white-space: nowrap; }
+.sch-tabs a:hover { color: var(--ink); }
+.sch-tabs a.active { color: var(--ink); border-bottom-color: var(--c1); }
+
+/* banners in the rafters */
+.rafters { position: relative; padding-top: 14px; }
+.rafter-bar { position: absolute; left: 0; right: 0; top: 0; height: 8px; border-radius: 4px; background: repeating-linear-gradient(90deg, #4b5560 0 18px, #5b6670 18px 20px); }
+.banner-row { display: flex; flex-wrap: wrap; gap: 22px 16px; padding: 6px 4px 4px; }
+.banner { --bc: #333; --bt: #fff; --bi: #fff; position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 116px; min-height: 172px; padding: 12px 9px 30px; text-align: center; text-decoration: none; color: var(--bi);
+  background: var(--bc); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%); box-shadow: inset 0 0 0 3px var(--bt), inset 0 0 0 5px var(--bc), inset 0 0 0 6px var(--bt); transition: transform .15s; }
+.banner::before { content: ''; position: absolute; top: -14px; left: 24px; right: 24px; height: 14px; border-left: 2px solid #6b7680; border-right: 2px solid #6b7680; }
+.banner:hover { transform: translateY(2px); }
+.banner .bn-logo { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: #fff; }
+.banner .bn-year { font-family: var(--display); font-weight: 800; font-size: 22px; line-height: 1; margin-top: 4px; }
+.banner .bn-title { font-family: var(--display); font-weight: 800; font-size: 13px; line-height: 1.05; text-transform: uppercase; letter-spacing: .02em; overflow-wrap: anywhere; }
+.banner .bn-sport { font-size: 10.5px; font-weight: 600; opacity: .85; text-transform: uppercase; letter-spacing: .04em; line-height: 1.15; }
+/* National titles: a gold banner in the school's color, so they stand out
+   for every school (even one whose own second color is gold). */
+.banner.national { color: var(--bc); background: linear-gradient(160deg, #f3d36b, #d4a52c 55%, #b9891c);
+  box-shadow: inset 0 0 0 3px var(--bc), inset 0 0 0 5px #e9c45a, inset 0 0 0 6px var(--bc); }
+.banner.national .bn-title { font-size: 14.5px; }
+.banner.national .bn-sport { opacity: 1; }
+.banner .bn-star { color: var(--bc); font-size: 15px; line-height: 1; }
+.banner-sum { margin: 10px 0 0; }
+.empty-rafters { padding: 6px 0; }
+
+/* one sport */
+.season-head { margin-bottom: 12px; gap: 10px; }
+.season-head select { margin-left: 6px; }
+.snaps { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.snap { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.snap .v { font-family: var(--display); font-weight: 800; font-size: 26px; line-height: 1.1; }
+.snap .l { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.season-line { margin: 12px 0 18px; }
+.sched td { vertical-align: middle; }
+.sched tr.post td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.res { display: inline-block; width: 20px; font-weight: 800; text-align: center; }
+.res-W { color: var(--good); } .res-L { color: var(--bad); } .res-T { color: var(--muted); }
+.conf-mark { color: var(--muted); margin-left: 2px; }
+.sched-tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--chip); color: var(--muted); white-space: nowrap; }
+.sched-tag.nt { background: color-mix(in srgb, var(--gold) 18%, transparent); color: var(--gold); }
+.sched-tag.ct { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.sched-tag.conf { background: transparent; padding: 0; }
+.show-sm { display: none; }
+.synopsis { font-size: 15px; line-height: 1.55; max-width: 72ch; }
+tr.cur td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.nowrap { white-space: nowrap; }
+
+/* all sports */
+.sport-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin: 16px 0; }
+.sport-cards .card { margin: 0; }
+.sport-card { display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--ink); transition: border-color .15s, transform .15s; }
+.sport-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.sc-name { font-family: var(--display); font-weight: 800; font-size: 19px; }
+
+@media (max-width: 640px) {
+  .sch-hero { padding: 16px; gap: 12px; }
+  .sch-logo { width: 64px; height: 64px; }
+  .sch-logo .logo, .sch-logo img, .sch-logo .tbadge { width: 50px !important; height: 50px !important; }
+  .sch-id h1 { font-size: 30px; }
+  .banner { width: 96px; min-height: 156px; }
+  .hide-sm { display: none; }
+  .sched { font-size: 13.5px; table-layout: fixed; width: 100%; }
+  .sched th:nth-child(1) { width: 72px; } .sched th:nth-child(3) { width: 74px; }
+  .sched td:nth-child(2) { overflow-wrap: anywhere; }
+  .sched .res { width: 14px; }
+  .sched .rnote { display: block; }
+  .sched .sched-tag { white-space: normal; }
+  .sched td:nth-child(3) { white-space: normal; }
+  .sched th, .sched td { padding-left: 4px; padding-right: 4px; }
+  .sched td.dt { white-space: normal; }
+  .sched .md { white-space: nowrap; }
+  .sched .dw { display: block; font-size: 11px; color: var(--muted); }
+  .sched .team { white-space: normal; }
+  .sch-logo .tbadge { font-size: 16px !important; }
+  .show-sm { display: block; margin-top: 2px; }
+}

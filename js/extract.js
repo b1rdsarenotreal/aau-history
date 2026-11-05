@@ -1,11 +1,12 @@
 // Turns a dynasty backup into history: for every season, every team's
 // record, conference, coach, conference titles and national tournament
-// finish, plus the season's champions. Only this summary is kept (a full
+// finish, the season's champions, and every game's result in a compact form
+// (for the school pages' schedules). Only this summary is kept (a full
 // backup can be megabytes per season); re-upload the backup to refresh it.
 
 // Bump when the summary's shape or meaning changes; the Data page then asks
 // for a fresh upload of older entries.
-export const EXTRACT_VERSION = 1;
+export const EXTRACT_VERSION = 2; // 2: games for the schools' schedules
 
 const NATIONAL = new Set(['regional', 'super', 'mcws']);
 const isFinal = g => g && g.final && g.homeR != null && g.awayR != null;
@@ -50,6 +51,35 @@ function regChamps(season, recs, sport) {
     const score = t => (sport.ties ? (3 * recs[t].cw + recs[t].ct) / (recs[t].cw + recs[t].cl + recs[t].ct) : (recs[t].cw + recs[t].ct / 2) / (recs[t].cw + recs[t].cl + recs[t].ct));
     const best = Math.max(...played.map(score));
     out[c] = played.filter(t => Math.abs(score(t) - best) < 1e-9).sort();
+  }
+  return out;
+}
+
+// Every game in a compact form for the school pages' schedules:
+//   w week, d day, o order within the week (7 or more: after the weekend),
+//   h home, a away, hr/ar the score (final games only), x periods played,
+//   t type (left out for the regular season), c a conference game,
+//   n a neutral site, v the venue (arena and city), hs the host school, lb the event's label (a
+//   tournament or a round), e the event (postseason), pk the shootout.
+function compactGames(season) {
+  const out = [];
+  for (const g of season.games || []) {
+    if (!g.home || !g.away || !season.teams[g.home] || !season.teams[g.away]) continue;
+    const c = { w: g.week, d: g.day, h: g.home, a: g.away };
+    if (g.order != null) c.o = Math.round(g.order * 100) / 100;
+    if (isFinal(g)) { c.hr = g.homeR; c.ar = g.awayR; if (Array.isArray(g.homeLine)) c.x = g.homeLine.length; }
+    if (g.type && g.type !== 'regular') c.t = g.type;
+    if (g.confGame) c.c = 1;
+    if (g.neutral) c.n = 1;
+    // Where a neutral-site game was: an arena (basketball's { stadium, city })
+    // or the school whose field it was played at.
+    if (g.venue && typeof g.venue === 'object') c.v = [g.venue.stadium, g.venue.city].filter(Boolean).join(', ');
+    else if (typeof g.venue === 'string') c.v = g.venue;
+    if (g.site) c.hs = g.site;
+    if (g.label) c.lb = g.label;
+    if (g.event) c.e = g.event;
+    if (g.pk && isFinal(g)) c.pk = [g.pk.home, g.pk.away];
+    out.push(c);
   }
   return out;
 }
@@ -103,6 +133,8 @@ export function seasonSummary(season, league, sport) {
   }
   return {
     complete,
+    games: compactGames(season),
+    reg: season.settings?.periods ?? season.settings?.innings ?? null, // regulation periods, when the app sets them
     finalsName: season.settings?.mcwsName || sport.finals,
     venue: [season.settings?.mcwsVenue, season.settings?.mcwsCity].filter(Boolean).join(', '),
     champion: post.champion || null, runnerUp: post.runnerUp || null,

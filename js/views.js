@@ -1,10 +1,10 @@
 // Pages: home, champions, schools, a school, the all-sports cup, and data.
 
-import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261104005741';
-import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261104005741';
-import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261104005741';
-import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261104005741';
-import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261104005741';
+import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105151853';
+import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261105151853';
+import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261105151853';
+import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261105151853';
+import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261105151853';
 
 const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '' };
 const finishText = (d, s, t) => (t.finish === 'finals' ? s.finalsName : FINISH_LABEL[t.finish] || '');
@@ -154,12 +154,12 @@ export function renderChampions() {
 // ---------- schools ----------
 
 // Every season of every sport for one school: [{ d, y, s, t }].
-function schoolSeasons(name) {
+export function schoolSeasons(name) {
   const out = [];
   for (const d of dynasties()) for (const [y, s] of Object.entries(d.years)) if (s.teams[name]) out.push({ d, y: +y, s, t: s.teams[name] });
   return out;
 }
-function schoolTotals(name) {
+export function schoolTotals(name) {
   const rows = schoolSeasons(name);
   const x = { sports: new Set(), titles: 0, finals: 0, bids: 0, reg: 0, tour: 0, w: 0, l: 0, t: 0, cups: 0 };
   for (const { d, t } of rows) {
@@ -186,30 +186,6 @@ export function renderSchools() {
     </tbody></table></div></div>`;
   const find = $('#sc-find');
   find.oninput = () => { ui.schoolFilter = find.value; const pos = find.selectionStart; renderSchools(); const el = $('#sc-find'); el.focus(); el.setSelectionRange(pos, pos); };
-}
-
-export function renderSchool(name) {
-  const rows = schoolSeasons(name);
-  if (!rows.length) { app.innerHTML = `<div class="empty">No history for ${esc(name)} yet. <a href="#/schools">All schools</a></div>`; return; }
-  const look = schoolLook(name), x = schoolTotals(name);
-  const bySport = {};
-  for (const r of rows) (bySport[r.d.sport.id] ||= { d: r.d, rows: [] }).rows.push(r);
-  const sportOrder = dynasties().map(d => d.sport.id).filter(id => bySport[id]);
-  const cupRows = cupYears(ctx.history).map(y => { const c = cupStandings(ctx.history, y); const i = c.schools.findIndex(s => s.school === name); return i < 0 ? null : { y, rank: i + 1, ...c.schools[i], of: c.schools.length }; }).filter(Boolean).reverse();
-  const kpi = (v, l) => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
-  app.innerHTML = `<div class="section-head"><h1 class="school-head">${logoImg(name, 40)} ${esc(name)}</h1><span class="muted">${esc(look.mascot || '')}</span></div>
-    <div class="kpis">${kpi(x.titles, 'National titles')}${kpi(x.finals, 'Finals-site trips')}${kpi(x.bids, 'National tournaments')}${kpi(x.reg + x.tour, 'Conference titles')}${kpi(x.cups, 'All-Sports Cups')}${kpi(rec(x), 'All-time, every sport')}</div>
-    ${cupRows.length ? `<div class="card"><h2>All-Sports Cup</h2><div class="table-wrap"><table><thead><tr><th>Year</th><th class="num">Rank</th><th class="num">Points</th>${dynasties().map(d => `<th class="num" title="${esc(d.sport.name)}">${esc(d.sport.short)}</th>`).join('')}</tr></thead><tbody>
-      ${cupRows.map(c => `<tr><td>${seasonLabel(c.y)}</td><td class="num"><b>${c.rank}</b> <span class="muted small">of ${c.of}</span></td><td class="num"><b>${c.total}</b></td>${dynasties().map(d => `<td class="num">${c.bySport[d.sport.id] ?? '<span class="muted">—</span>'}</td>`).join('')}</tr>`).join('')}
-    </tbody></table></div></div>` : ''}
-    ${sportOrder.map(id => { const { d, rows: rs } = bySport[id]; rs.sort((a, b) => b.y - a.y); const tot = rs.reduce((a, r) => ({ w: a.w + r.t.w, l: a.l + r.t.l, t: a.t + r.t.t, ti: a.ti + (r.t.finish === 'champion' ? 1 : 0) }), { w: 0, l: 0, t: 0, ti: 0 });
-      return `<div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">${esc(d.sport.name)}</h2><span class="muted small">${rs.length} season${rs.length === 1 ? '' : 's'} · ${rec(tot)}${tot.ti ? ` · ${tot.ti} national title${tot.ti > 1 ? 's' : ''}` : ''}</span></div>
-      <div class="table-wrap"><table><thead><tr><th>Year</th><th>Conference</th><th>Coach</th><th class="num">Record</th><th class="num">Conf.</th><th>Titles</th><th>National tournament</th><th class="num">Final rank</th></tr></thead><tbody>
-        ${rs.map(({ y, s, t }) => `<tr><td>${seasonLabel(y)}${s.complete ? '' : '<span class="muted">*</span>'}</td><td class="small">${t.conf ? `${confLogo(d, t.conf, 16)} ${esc(d.conferences?.[t.conf]?.abbr || t.conf)}` : ''}</td><td class="small">${esc(t.coach || '—')}</td><td class="num">${rec(t)}</td><td class="num">${t.cw + t.cl + t.ct ? confRec(t) : ''}</td>
-          <td>${t.regChamp ? '<span class="badge">Reg. season</span> ' : ''}${t.tourneyChamp ? '<span class="badge gold">Tournament</span>' : ''}</td>
-          <td>${t.finish ? `${t.finish === 'champion' ? '<b>🏆 National champion</b>' : esc(finishText(d, s, t))}${t.seed ? ` <span class="muted small">(${t.seed} seed${t.natW + t.natL ? `, ${t.natW}-${t.natL}` : ''})</span>` : ''}` : '<span class="muted">—</span>'}</td><td class="num">${t.rank ?? '<span class="muted">NR</span>'}</td></tr>`).join('')}
-      </tbody></table></div></div>`; }).join('')}
-    <p class="small muted">* season in progress when the backup was uploaded.</p>`;
 }
 
 // ---------- the all-sports cup ----------

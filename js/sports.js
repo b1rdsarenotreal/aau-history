@@ -15,22 +15,43 @@
 //   ties    whether level games can stand as ties (soccer, ice hockey)
 //   pkWins  whether a shootout decides the result in the record (field
 //           hockey: yes; soccer: no, the match is a tie in the record)
+//   reg     regulation periods, when the backup doesn't say (halves,
+//           quarters, periods or innings; volleyball plays sets)
+//   unit    'match' or 'game', as the sport's app says it
+//   start   the Monday of week 1 for a season year, as the sport's app
+//           counts its calendar (seasons are academic years: the 2030
+//           season's spring sports are played in 2031)
+
+// In season order: fall, winter, spring.
+// Week-1 Mondays, from each app's calendar.
+const utc = (y, m, d) => new Date(Date.UTC(y, m, d));
+const lastWeekday = (y, m, last, dow) => last - ((utc(y, m, last).getUTCDay() - dow + 7) % 7); // the last <dow> on or before day `last`
+const firstMonday = (y, m) => 1 + ((8 - utc(y, m, 1).getUTCDay()) % 7);
+const START = {
+  fallFri: y => utc(y, 7, lastWeekday(y, 7, 31, 5) - 4), // the week of the last Friday in August
+  fallThu: y => utc(y, 7, lastWeekday(y, 7, 31, 4) - 3), // the week of the last Thursday in August (soccer)
+  janFri2: y => { const f = 1 + ((5 - utc(y + 1, 0, 1).getUTCDay() + 7) % 7) + 7; return utc(y + 1, 0, f - 4); }, // second Friday of January
+  febFri2: y => { const f = 1 + ((5 - utc(y + 1, 1, 1).getUTCDay() + 7) % 7) + 7; return utc(y + 1, 1, f - 4); }, // second Friday of February
+  octMon: y => utc(y, 9, firstMonday(y, 9)), // the first Monday in October
+  novMon: y => utc(y, 10, firstMonday(y, 10)), // the first Monday in November
+  janMon: y => { const d = utc(y + 1, 0, 26); return utc(y + 1, 0, 26 + ((8 - d.getUTCDay()) % 7)); }, // the last Monday in January
+};
 
 // In season order: fall, winter, spring.
 export const SPORTS = {
-  'w-volleyball': { name: "Women's Volleyball", short: 'W VB', gender: 'women', finals: 'Final Four' },
-  'm-volleyball': { name: "Men's Volleyball", short: 'M VB', gender: 'men', finals: 'National Tournament' },
-  'w-soccer': { name: "Women's Soccer", short: 'W Soc', gender: 'women', finals: 'College Cup', ties: true },
-  'm-soccer': { name: "Men's Soccer", short: 'M Soc', gender: 'men', finals: 'College Cup', ties: true },
-  'field-hockey': { name: 'Field Hockey', short: 'FH', gender: 'women', finals: 'Final Four', pkWins: true },
-  'w-basketball': { name: "Women's Basketball", short: 'W BB', gender: 'women', finals: 'Final Four' },
-  'm-basketball': { name: "Men's Basketball", short: 'M BB', gender: 'men', finals: 'Final Four' },
-  'w-hockey': { name: "Women's Ice Hockey", short: 'W IH', gender: 'women', finals: 'Frozen Four', ties: true },
-  'm-hockey': { name: "Men's Ice Hockey", short: 'M IH', gender: 'men', finals: 'Frozen Four', ties: true },
-  softball: { name: 'Softball', short: 'SB', gender: 'women', finals: "Women's College World Series" },
-  baseball: { name: 'Baseball', short: 'BSB', gender: 'men', finals: 'College World Series' },
-  'w-lacrosse': { name: "Women's Lacrosse", short: 'W Lax', gender: 'women', finals: 'Final Four' },
-  'm-lacrosse': { name: "Men's Lacrosse", short: 'M Lax', gender: 'men', finals: 'Final Four' },
+  'w-volleyball': { name: "Women's Volleyball", short: 'W VB', gender: 'women', finals: 'Final Four', unit: 'match', start: START.fallFri },
+  'm-volleyball': { name: "Men's Volleyball", short: 'M VB', gender: 'men', finals: 'National Tournament', unit: 'match', start: START.janFri2 },
+  'w-soccer': { name: "Women's Soccer", short: 'W Soc', gender: 'women', finals: 'College Cup', ties: true, reg: 2, unit: 'match', start: START.fallThu },
+  'm-soccer': { name: "Men's Soccer", short: 'M Soc', gender: 'men', finals: 'College Cup', ties: true, reg: 2, unit: 'match', start: START.fallThu },
+  'field-hockey': { name: 'Field Hockey', short: 'FH', gender: 'women', finals: 'Final Four', pkWins: true, reg: 4, unit: 'match', start: START.fallFri },
+  'w-basketball': { name: "Women's Basketball", short: 'W BB', gender: 'women', finals: 'Final Four', reg: 4, unit: 'game', start: START.novMon },
+  'm-basketball': { name: "Men's Basketball", short: 'M BB', gender: 'men', finals: 'Final Four', reg: 2, unit: 'game', start: START.novMon },
+  'w-hockey': { name: "Women's Ice Hockey", short: 'W IH', gender: 'women', finals: 'Frozen Four', ties: true, reg: 3, unit: 'game', start: START.octMon },
+  'm-hockey': { name: "Men's Ice Hockey", short: 'M IH', gender: 'men', finals: 'Frozen Four', ties: true, reg: 3, unit: 'game', start: START.octMon },
+  softball: { name: 'Softball', short: 'SB', gender: 'women', finals: "Women's College World Series", reg: 7, unit: 'game', innings: true, start: START.febFri2 },
+  baseball: { name: 'Baseball', short: 'BSB', gender: 'men', finals: 'College World Series', reg: 9, unit: 'game', innings: true, start: START.febFri2 },
+  'w-lacrosse': { name: "Women's Lacrosse", short: 'W Lax', gender: 'women', finals: 'Final Four', reg: 4, unit: 'game', start: START.janMon },
+  'm-lacrosse': { name: "Men's Lacrosse", short: 'M Lax', gender: 'men', finals: 'Final Four', reg: 4, unit: 'game', start: START.janMon },
 };
 for (const [id, p] of Object.entries(SPORTS)) p.id = id;
 
