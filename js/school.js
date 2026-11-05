@@ -7,10 +7,10 @@
 //   with results), a short program history, coaches and every season.
 // Routes: #/school/<name>, #/school/<name>/<sport>, #/school/<name>/<sport>/<year>.
 
-import { ctx, app, esc, dynasties, schoolLook, logoImg, confLogo, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105151853';
-import { cupStandings, cupYears, FINISH_LABEL } from './cup.js?v=20261105151853';
-import { schoolSeasons, schoolTotals } from './views.js?v=20261105151853';
-import { pct } from './extract.js?v=20261105151853';
+import { ctx, app, esc, dynasties, schoolLook, logoImg, confLogo, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105152245';
+import { cupStandings, cupYears, FINISH_LABEL } from './cup.js?v=20261105152245';
+import { schoolSeasons, schoolTotals } from './views.js?v=20261105152245';
+import { pct } from './extract.js?v=20261105152245';
 
 const enc = encodeURIComponent;
 export const schoolUrl = (name, sport, year) => `#/school/${enc(name)}${sport ? `/${enc(sport)}` : ''}${sport && year ? `/${year}` : ''}`;
@@ -20,6 +20,10 @@ const MON = ['Jan.', 'Feb.', 'March', 'April', 'May', 'June', 'July', 'Aug.', 'S
 const ordinal = n => `${n}${[, 'st', 'nd', 'rd'][(n % 100 >> 3 ^ 1) && n % 10] || 'th'}`;
 const pct3 = r => (r.w + r.l + r.t ? pct(r).toFixed(3).replace(/^0/, '') : '—');
 
+const lum = c => { const m = /^#?([0-9a-f]{6})$/i.exec(c || ''); if (!m) return 0; const n = parseInt(m[1], 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; };
+// Text on a gold national-title banner: the school's darker color, or
+// near-black when both its colors are light.
+const goldInk = (c1, c2) => (lum(c1) < 0.35 ? c1 : lum(c2) < 0.35 ? c2 : '#1d2329');
 function readableOn(bg) {
   const m = /^#?([0-9a-f]{6})$/i.exec(bg || '');
   if (!m) return '#fff';
@@ -37,12 +41,6 @@ function colorsOf(name) {
 
 // ---------- banners ----------
 
-// A conference's name on a banner: short names as they are ("Big Ten",
-// "Ivy League"), longer ones by abbreviation ("CAC", "SWC").
-function confShort(d, c) {
-  const abbr = d.conferences?.[c]?.abbr;
-  return c.length <= 10 || !abbr ? c : abbr;
-}
 // Every banner a school has earned, in one sport or all: national titles
 // first, then regular-season and tournament conference titles, newest first.
 export function bannersOf(name, sportId = null) {
@@ -53,8 +51,8 @@ export function bannersOf(name, sportId = null) {
       const t = s.teams[name];
       if (!t) continue;
       if (t.finish === 'champion') out.push({ kind: 'national', d, y: +y, title: 'National Champions' });
-      if (t.regChamp && t.conf) out.push({ kind: 'reg', d, y: +y, title: `${confShort(d, t.conf)} Champions` });
-      if (t.tourneyChamp && t.conf) out.push({ kind: 'tourney', d, y: +y, title: `${confShort(d, t.conf)} Tournament Champions` });
+      if (t.regChamp && t.conf) out.push({ kind: 'reg', d, y: +y, conf: t.conf, title: 'Champions', full: `${t.conf} Champions` });
+      if (t.tourneyChamp && t.conf) out.push({ kind: 'tourney', d, y: +y, conf: t.conf, title: 'Tournament Champions', full: `${t.conf} Tournament Champions` });
     }
   }
   const rank = { national: 0, reg: 1, tourney: 2 };
@@ -62,10 +60,11 @@ export function bannersOf(name, sportId = null) {
 }
 function bannerHtml(name, b, showSport) {
   const { c1, c2, ink } = colorsOf(name);
-  return `<a class="banner ${b.kind}" href="${schoolUrl(name, b.d.sport.id, b.y)}" style="--bc:${c1};--bt:${c2};--bi:${ink}" title="${esc(`${seasonLabel(b.y)} ${b.title} · ${b.d.sport.name}`)}">
+  return `<a class="banner ${b.kind}" href="${schoolUrl(name, b.d.sport.id, b.y)}" style="--bc:${c1};--bt:${c2};--bi:${ink};--gi:${goldInk(c1, c2)}" title="${esc(`${seasonLabel(b.y)} ${b.full || b.title} · ${b.d.sport.name}`)}">
     <span class="bn-logo">${logoImg(name, 30)}</span>
     ${b.kind === 'national' ? '<span class="bn-star">★</span>' : ''}
     <span class="bn-year">${seasonLabel(b.y)}</span>
+    ${b.conf ? `<span class="bn-conf" title="${esc(b.conf)}">${confLogo(b.d, b.conf, 40)}</span>` : ''}
     <span class="bn-title">${esc(b.title)}</span>
     ${showSport ? `<span class="bn-sport">${esc(b.d.sport.name)}</span>` : ''}
   </a>`;

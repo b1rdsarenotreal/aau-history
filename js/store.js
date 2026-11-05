@@ -3,7 +3,7 @@
 // backup again replaces that sport's seasons with the new ones and keeps any
 // older seasons the new file no longer has. Download/Restore move it.
 
-import { sportWord, sportFamily } from './sports.js?v=20261105151853';
+import { sportWord, sportFamily } from './sports.js?v=20261105152245';
 const DB = 'aau-history', STORE = 'kv', KEY = 'aau-history';
 
 function idb() {

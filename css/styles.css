@@ -950,15 +950,19 @@ button.bx-sg:hover { border-color: var(--muted); }
 .banner:hover { transform: translateY(2px); }
 .banner .bn-logo { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: #fff; }
 .banner .bn-year { font-family: var(--display); font-weight: 800; font-size: 22px; line-height: 1; margin-top: 4px; }
+/* The conference's logo on a white plate, so it reads on any school color. */
+.banner .bn-conf { display: flex; align-items: center; justify-content: center; width: 84px; height: 54px; margin: 3px 0 1px; border-radius: 6px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); overflow: hidden; }
+.banner .bn-conf img { display: block; width: 76px !important; height: 48px !important; object-fit: contain; }
+.banner .bn-conf .tbadge { width: auto !important; height: 26px !important; padding: 0 8px; font-size: 13px !important; border-radius: 4px; }
 .banner .bn-title { font-family: var(--display); font-weight: 800; font-size: 13px; line-height: 1.05; text-transform: uppercase; letter-spacing: .02em; overflow-wrap: anywhere; }
 .banner .bn-sport { font-size: 10.5px; font-weight: 600; opacity: .85; text-transform: uppercase; letter-spacing: .04em; line-height: 1.15; }
 /* National titles: a gold banner in the school's color, so they stand out
    for every school (even one whose own second color is gold). */
-.banner.national { color: var(--bc); background: linear-gradient(160deg, #f3d36b, #d4a52c 55%, #b9891c);
-  box-shadow: inset 0 0 0 3px var(--bc), inset 0 0 0 5px #e9c45a, inset 0 0 0 6px var(--bc); }
+.banner.national { color: var(--gi); background: linear-gradient(160deg, #f3d36b, #d4a52c 55%, #b9891c);
+  box-shadow: inset 0 0 0 3px var(--gi), inset 0 0 0 5px #e9c45a, inset 0 0 0 6px var(--gi); }
 .banner.national .bn-title { font-size: 14.5px; }
 .banner.national .bn-sport { opacity: 1; }
-.banner .bn-star { color: var(--bc); font-size: 15px; line-height: 1; }
+.banner .bn-star { color: var(--gi); font-size: 15px; line-height: 1; }
 .banner-sum { margin: 10px 0 0; }
 .empty-rafters { padding: 6px 0; }
 
@@ -997,6 +1001,8 @@ tr.cur td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
   .sch-logo .logo, .sch-logo img, .sch-logo .tbadge { width: 50px !important; height: 50px !important; }
   .sch-id h1 { font-size: 30px; }
   .banner { width: 96px; min-height: 156px; }
+  .banner .bn-conf { width: 74px; height: 48px; }
+  .banner .bn-conf img { width: 68px !important; height: 42px !important; }
   .hide-sm { display: none; }
   .sched { font-size: 13.5px; table-layout: fixed; width: 100%; }
   .sched th:nth-child(1) { width: 72px; } .sched th:nth-child(3) { width: 74px; }
