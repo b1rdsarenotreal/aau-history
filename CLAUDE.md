@@ -24,6 +24,13 @@ dynasty apps aren't made from here unless the owner asks.
   coach, conference titles, national tournament finish and wins, final poll
   rank, champions). Sport rules live in the profile: `ties` (soccer, ice
   hockey) and `pkWins` (field hockey). Bump `EXTRACT_VERSION` when the summary changes.
+- School pages (`js/school.js`) are like a team site: a header in the
+  school's colors, a tab per sport, banners (national titles in gold;
+  regular-season and tournament conference titles with the conference's
+  logo), and per sport a season picker, snapshot, schedule with results,
+  program write-up, season by season and coaches. Schedules come from each
+  season's compact `games` (EXTRACT_VERSION 2); dates from each sport's
+  calendar (`start` in `js/sports.js`, the same rule as its app).
 - Uploads merge per sport: new seasons replace, older seasons are kept
   (`mergeDynasty` in `js/store.js`). History is in IndexedDB under
   `aau-history`.
