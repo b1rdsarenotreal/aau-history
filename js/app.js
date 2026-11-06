@@ -1,11 +1,11 @@
 // App shell: loading the history, the top bar and page routing.
 
-import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261105223531';
-import { loadLogoTable } from './logos.js?v=20261105223531';
-import { renderSchool } from './school.js?v=20261105223531';
-import { renderTournament } from './tournament.js?v=20261105223531';
-import { ctx, app, esc } from './ui.js?v=20261105223531';
-import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261105223531';
+import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261105224258';
+import { loadLogoTable } from './logos.js?v=20261105224258';
+import { renderSchool } from './school.js?v=20261105224258';
+import { renderTournament } from './tournament.js?v=20261105224258';
+import { ctx, app, esc } from './ui.js?v=20261105224258';
+import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261105224258';
 
 const VIEWS = { home: 'Home', champions: 'Champions', tournament: 'Tournaments', schools: 'Schools', cup: 'All-Sports Cup', data: 'Data' };
 const SUBVIEWS = { school: 'schools' };
@@ -23,6 +23,10 @@ function render() {
     app.innerHTML = `<div class="empty">Something went wrong showing this page: ${esc(e.message)}</div>`;
   }
 }
+
+// Brackets are fitted to the window, so draw them again when it resizes.
+let resizeTimer = null;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (currentView() === 'tournament') render(); }, 150); });
 
 let lastView = null;
 window.addEventListener('hashchange', () => { const v = currentView(); render(); if (v !== lastView) window.scrollTo(0, 0); lastView = v; });

@@ -6,14 +6,18 @@
 // cards with their teams and games.
 // Route: #/tournament/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261105223531';
-import { schoolUrl } from './school.js?v=20261105223531';
+import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261105224258';
+import { schoolUrl } from './school.js?v=20261105224258';
 
 const enc = encodeURIComponent;
 export const tournamentUrl = (sport, year) => `#/tournament/${enc(sport)}${year != null ? `/${year}` : ''}`;
 
 // Bracket geometry (px): a match box, the column step and the slot step.
-const BOX_W = 146, BOX_GAP_W = 16, BH = 50, SLOT = 66;
+const BH = 50, SLOT = 66;
+// Box widths for the page being drawn, fitted to the window (fitSizes):
+// corner brackets use `bw` with a `gap` between rounds, one-bracket fields
+// `one` with `oneGap`.
+let SIZE = { bw: 146, gap: 16, one: 186, oneGap: 28 };
 
 // Seeds 1..n in bracket order (1 v n on top, then the halves), as the apps
 // pair regions and regionals.
@@ -65,8 +69,8 @@ function matchBox(ctx, ev, byKey, n, seedFor) {
 // every team with a bye takes a slot; a later game sits halfway between the
 // two it comes from. `mirror` flows right to left.
 function bracketHtml(ctx, ev, seedFor, { mirror = false, title = '', wide = false } = {}) {
-  // A wide bracket (the one-bracket view) has room for full school names.
-  const BW = wide ? 186 : BOX_W, CW = BW + (wide ? 28 : BOX_GAP_W);
+  // A wide bracket (the one-bracket view) gets its own, wider boxes.
+  const BW = wide ? SIZE.one : SIZE.bw, CW = BW + (wide ? SIZE.oneGap : SIZE.gap);
   // A game against a bye isn't drawn (the owner's call): the team with the
   // bye starts in the next round, next to an empty slot.
   const bye = x => x === 'bye' || (typeof x === 'number' && x >= ev.s.length);
@@ -237,7 +241,51 @@ function oneBracket(nt) {
   return { s: [], nodes, k: 'single', home: regs.every(r => r.home) };
 }
 
-export function renderTournament(parts = []) {
+// Rounds a bracket draws (games against a bye aren't drawn).
+function drawnCols(ev) {
+  const bye = x => x === 'bye' || (typeof x === 'number' && x >= ev.s.length);
+  return new Set(ev.nodes.filter(n => !n.cond && !bye(n.a) && !bye(n.b)).map(n => n.dp || 1)).size;
+}
+// The width the longest school name needs, in a match box's bold 12.5px
+// type, plus the box's seed, logo, score and padding.
+let measureCtx = null;
+function nameNeed(names) {
+  measureCtx ||= document.createElement('canvas').getContext('2d');
+  measureCtx.font = "700 12.5px 'Public Sans', system-ui, sans-serif";
+  return Math.ceil(Math.max(80, ...names.map(t => measureCtx.measureText(t).width))) + 72;
+}
+// Box widths that fill the page: as wide as fits (up to a limit), and never
+// narrower than the longest school name needs (the page scrolls sideways
+// then).
+function fitSizes(nt, one, corners4) {
+  const cs = getComputedStyle(app);
+  const avail = Math.max(300, (app.clientWidth || window.innerWidth) - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0) - 16);
+  const need = nameNeed(nt.field.map(f => f[0])), extra = grow.key === growKey() ? grow.px : 0;
+  const fit = (total, lo, hi) => { let bw = hi; while (bw > lo && total(bw) > avail) bw -= 2; return bw; };
+  if (one) {
+    const cols = drawnCols(one);
+    const bw = fit(w => (cols - 1) * (w + SIZE.oneGap) + w + 40, 150, 320);
+    return { ...SIZE, one: Math.max(bw, need) + extra };
+  }
+  const evs = corners4.flat(), cards = evs.some(e => e.k !== 'single');
+  const cols = Math.max(1, ...evs.filter(e => e.k === 'single').map(drawnCols));
+  const cornerW = w => (cards ? w + 40 : (cols - 1) * (w + SIZE.gap) + w);
+  const fin = nt.events.find(e => e.st === 'fin');
+  const centerW = w => (fin && fin.k === 'single' ? Math.max(230, w + 64) : 2 * (w + 40) + 14 + 34);
+  const stacked = window.innerWidth <= 900; // corners stack under the finals
+  const total = w => (stacked ? Math.max(cornerW(w), centerW(w)) : 2 * cornerW(w) + centerW(w) + 52);
+  const bw = fit(total, 130, 300);
+  return { ...SIZE, bw: Math.max(bw, need) + extra, one: Math.max(bw, need) + extra };
+}
+
+// The canvas guess at a name's width can fall short of the page's own type;
+// after drawing, any name still cut off widens the boxes by what's missing
+// and the bracket is drawn once more (remembered for this page and width).
+let grow = { key: '', px: 0 };
+const growKey = () => `${location.hash}|${window.innerWidth}`;
+
+export function renderTournament(parts = [], again = false) {
+  if (!again && grow.key !== growKey()) grow = { key: '', px: 0 };
   const ds = dynasties().filter(d => Object.values(d.years).some(s => s.champion || s.fieldSize));
   if (!ds.length) { app.innerHTML = '<div class="empty">Upload a dynasty backup on the Data page to see its national tournaments.</div>'; return; }
   const d = ds.find(x => x.sport.id === parts[0]) || ds[0];
@@ -256,10 +304,11 @@ export function renderTournament(parts = []) {
     const natSeed = Object.fromEntries(s.nt.field.map(([t, seed]) => [t, seed]));
     const one = oneBracket(s.nt);
     const [tl, bl, tr, br] = one ? [[], [], [], []] : corners(s.nt);
+    SIZE = fitSizes(s.nt, one, [tl, bl, tr, br]);
     const corner = (list, mirror, cls) => `<div class="nt-corner ${cls}">${list.map(e => cornerEvent(ctx, e, mirror, natSeed)).join('')}</div>`;
     const hasCorners = tl.length + bl.length + tr.length + br.length > 0;
     const field = s.nt.field.slice().sort((a, b) => a[1] - b[1]);
-    body = `<div class="nt-scroll"><div class="nt-board${hasCorners ? '' : ' solo'}">
+    body = `<div class="nt-scroll"><div class="nt-board${hasCorners ? '' : ' solo'}" style="--bw:${SIZE.bw}px">
         ${hasCorners ? `${corner(tl, false, 'tl')}${corner(bl, false, 'bl')}` : ''}
         ${one ? oneHtml(ctx, s, one, natSeed) : centerHtml(ctx, s, s.nt, natSeed)}
         ${hasCorners ? `${corner(tr, true, 'tr')}${corner(br, true, 'br')}` : ''}
@@ -268,6 +317,8 @@ export function renderTournament(parts = []) {
         <ol class="nt-field-list">${field.map(([t, seed, auto]) => `<li><span class="nt-seed">${seed}</span>${logoImg(t, 16)} <a href="${schoolUrl(t, d.sport.id, year)}">${esc(t)}</a>${auto ? ' <span class="muted" title="Automatic bid">★</span>' : ''}${s.teams[t] ? ` <span class="muted small">${s.teams[t].w}-${s.teams[t].l}${s.teams[t].t ? `-${s.teams[t].t}` : ''}</span>` : ''}</li>`).join('')}</ol></div>`;
   }
   app.innerHTML = `${headline}${body}`;
+  const short = Math.max(0, ...[...app.querySelectorAll('.nt-name')].map(e => e.scrollWidth - e.clientWidth));
+  if (short > 0 && !again) { grow = { key: growKey(), px: (grow.key === growKey() ? grow.px : 0) + short + 2 }; return renderTournament(parts, true); }
   const go = (sp, y) => { location.hash = tournamentUrl(sp, y); };
   const sp = document.getElementById('nt-sport'), yr = document.getElementById('nt-year');
   if (sp) sp.onchange = () => go(sp.value);

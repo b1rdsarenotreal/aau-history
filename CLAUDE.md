@@ -41,7 +41,10 @@ dynasty apps aren't made from here unless the owner asks.
   two mirrored), the finals in the middle; single-elimination events as a
   bracket, double-elimination regionals and series as cards. A field of
   `ONE_BRACKET_MAX` (12) or fewer, all single elimination, is one bracket
-  with national seeds (the owner's call). National-title
+  with national seeds (the owner's call). Games against a bye aren't drawn.
+  Boxes are sized to fill the window (`fitSizes`) and never cut a school's
+  name (a name still cut off after drawing widens them; the page then
+  scrolls sideways). National-title
   banners, the Champions page and school seasons link to it.
 - Uploads merge per sport: new seasons replace, older seasons are kept
   (`mergeDynasty` in `js/store.js`). History is in IndexedDB under
