@@ -76,6 +76,8 @@ with sync_playwright() as p:
         assert pg.locator(".nt-champion").count() == 1, sid
         if sid in ("w-basketball", "w-soccer", "w-volleyball"):
             assert pg.locator(".nt-corner .nt-bracket").count() == 4, sid
+        if sid in ("m-hockey", "w-hockey", "m-lacrosse", "field-hockey"):
+            assert pg.locator(".nt-corner").count() == 0 and pg.locator(".nt-center .nt-bracket").count() == 1, f"{sid}: a field of 12 or fewer is one bracket"
         if sid == "softball":
             assert pg.locator(".nt-corner .nt-card").count() == 8, "eight regionals in the corners"
 

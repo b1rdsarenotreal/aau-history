@@ -1061,6 +1061,7 @@ tr.cur td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .nt-lines { position: absolute; inset: 0; overflow: visible; }
 .nt-lines path { fill: none; stroke: color-mix(in srgb, var(--muted) 55%, transparent); stroke-width: 1.5; }
 .nt-slot { position: absolute; }
+.nt-slot > .nt-match { width: var(--bw, 146px); }
 .nt-bracket.mirror .nt-tree, .nt-bracket.mirror .nt-rounds { transform: scaleX(-1); }
 .nt-bracket.mirror .nt-slot > *, .nt-bracket.mirror .nt-rounds span { transform: scaleX(-1); }
 .nt-bracket.mirror { display: flex; flex-direction: column; align-items: flex-end; }

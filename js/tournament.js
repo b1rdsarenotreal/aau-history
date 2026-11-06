@@ -6,14 +6,14 @@
 // cards with their teams and games.
 // Route: #/tournament/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261105222345';
-import { schoolUrl } from './school.js?v=20261105222345';
+import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261105222751';
+import { schoolUrl } from './school.js?v=20261105222751';
 
 const enc = encodeURIComponent;
 export const tournamentUrl = (sport, year) => `#/tournament/${enc(sport)}${year != null ? `/${year}` : ''}`;
 
 // Bracket geometry (px): a match box, the column step and the slot step.
-const BW = 146, BH = 50, CW = 162, SLOT = 66;
+const BOX_W = 146, BOX_GAP_W = 16, BH = 50, SLOT = 66;
 
 // Seeds 1..n in bracket order (1 v n on top, then the halves), as the apps
 // pair regions and regionals.
@@ -27,7 +27,12 @@ function bracketOrder(n) {
 // loser of another node.
 function sideTeam(ev, byKey, s) {
   if (typeof s === 'number') return ev.s[s] ?? null;
-  if (typeof s === 'string') { const [k, key] = s.split(':'); const n = byKey[key]; return n ? (k === 'w' ? n.w : n.l) : null; }
+  if (s === 'bye') return null;
+  if (typeof s === 'string') {
+    const i = s.indexOf(':'), k = s.slice(0, i), key = s.slice(i + 1);
+    if (k === 't') return key; // a team placed by name (the one-bracket view)
+    const n = byKey[key]; return n ? (k === 'w' ? n.w : n.l) : null;
+  }
   return null;
 }
 const scoreOf = (g, t) => (g && g.hr != null ? (g.h === t ? g.hr : g.ar) : null);
@@ -43,7 +48,7 @@ function extraText(sport, reg, g) {
 function matchBox(ctx, ev, byKey, n, seedFor) {
   const ta = sideTeam(ev, byKey, n.a), tb = sideTeam(ev, byKey, n.b), g = n.g;
   // A seed past the end of the event's seeds is a bye.
-  const isBye = side => typeof side === 'number' && side >= ev.s.length;
+  const isBye = side => side === 'bye' || (typeof side === 'number' && side >= ev.s.length);
   const row = (t, side) => {
     if (isBye(side)) return '<div class="nt-row bye"><span class="nt-seed"></span><span class="nt-logo"></span><span class="nt-name muted">Bye</span><span class="nt-score"></span></div>';
     const sc = scoreOf(g, t), won = n.w && n.w === t, lost = n.w && n.w !== t && t;
@@ -59,7 +64,9 @@ function matchBox(ctx, ev, byKey, n, seedFor) {
 // A single-elimination event drawn as a bracket. Every first-round game and
 // every team with a bye takes a slot; a later game sits halfway between the
 // two it comes from. `mirror` flows right to left.
-function bracketHtml(ctx, ev, seedFor, { mirror = false, title = '' } = {}) {
+function bracketHtml(ctx, ev, seedFor, { mirror = false, title = '', wide = false } = {}) {
+  // A wide bracket (the one-bracket view) has room for full school names.
+  const BW = wide ? 186 : BOX_W, CW = BW + (wide ? 28 : BOX_GAP_W);
   const nodes = ev.nodes.filter(n => !n.cond);
   if (!nodes.length) return '';
   const byKey = Object.fromEntries(ev.nodes.map(n => [n.k, n]));
@@ -101,7 +108,7 @@ function bracketHtml(ctx, ev, seedFor, { mirror = false, title = '' } = {}) {
     <div class="nt-rounds" style="width:${W}px">${rounds.map((r, i) => `<span style="left:${i * CW}px;width:${BW}px">${esc(r)}</span>`).join('')}</div>
     <div class="nt-tree" style="width:${W}px;height:${H}px">
       <svg class="nt-lines" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${lines.join('')}"/></svg>
-      ${nodes.map(n => { const p = pos[n.k]; return `<div class="nt-slot" style="left:${p.x * CW}px;top:${top(p)}px">${matchBox(ctx, ev, byKey, n, seedFor)}</div>`; }).join('')}
+      ${nodes.map(n => { const p = pos[n.k]; return `<div class="nt-slot" style="left:${p.x * CW}px;top:${top(p)}px;--bw:${BW}px">${matchBox(ctx, ev, byKey, n, seedFor)}</div>`; }).join('')}
     </div></div>`;
 }
 
@@ -160,7 +167,7 @@ function centerHtml(ctx, s, nt, natSeed) {
       return `<div class="nt-center">${head}${champ}<div class="nt-final4">${box(semis[0], n0(semis[0]))}${box(final, 'Championship')}${box(semis[1], n0(semis[1]))}</div></div>`;
     }
     // Any other size (a whole field at one site): the full bracket.
-    return `<div class="nt-center wide">${head}${champ}${bracketHtml(ctx, fin, seedFor)}</div>`;
+    return `<div class="nt-center wide">${head}${champ}${bracketHtml(ctx, fin, seedFor, { wide: true })}</div>`;
   }
   const brackets = nt.events.filter(e => e.st === 'finb');
   const series = nt.events.find(e => e.st === 'fins');
@@ -168,6 +175,12 @@ function centerHtml(ctx, s, nt, natSeed) {
   return `<div class="nt-center">${head}${champ}<div class="nt-finb">
     ${brackets.map((e, i) => eventCard(ctx, e, seedNat, `<b>Bracket ${esc(e.b || i + 1)}</b>`)).join('')}
     ${series ? eventCard(ctx, series, seedNat, '<b>Championship series</b>') : ''}</div></div>`;
+}
+// The one-bracket view: the finals' heading and champion over the whole bracket.
+function oneHtml(ctx, s, ev, natSeed) {
+  const champ = s.champion ? `<div class="nt-champion"><span class="nt-trophy">🏆</span>${logoImg(s.champion, 44)}<div><div class="small muted">National champion</div><a href="${schoolUrl(s.champion, ctx.sport.id, ctx.year)}"><b>${esc(s.champion)}</b></a></div></div>` : '';
+  const head = `<div class="nt-center-head"><div class="nt-finals-name">${esc(s.finalsName || ctx.sport.finals)}</div>${s.venue ? `<div class="small muted">${esc(s.venue)}</div>` : ''}${ev.home ? '<div class="small muted">Earlier rounds at the higher seed\'s home</div>' : ''}</div>`;
+  return `<div class="nt-center wide">${head}${champ}${bracketHtml(ctx, ev, t => natSeed[t] ?? '', { wide: true })}</div>`;
 }
 const n0 = n => (n.lb && /semi/i.test(n.lb) ? 'National semifinal' : n.lb || 'Semifinal');
 
@@ -191,6 +204,35 @@ function corners(nt) {
   return out;
 }
 
+// A field of ONE_BRACKET_MAX teams or fewer is drawn as one bracket, regions
+// and finals together (the owner's call, Nov. 2026), when every region and
+// the finals are single elimination. Regions keep their paths: path k feeds
+// the finals' seed k. Every team shows its national seed.
+const ONE_BRACKET_MAX = 12;
+function oneBracket(nt) {
+  const regs = nt.events.filter(e => e.st === 'reg');
+  const fin = nt.events.find(e => e.st === 'fin');
+  if (nt.field.length > ONE_BRACKET_MAX || !regs.length || !fin || fin.k !== 'single' || nt.events.some(e => e.st === 'sup') || regs.some(e => e.k !== 'single')) return null;
+  const nodes = [], rootOf = {};
+  let depth = 0;
+  for (const r of regs) {
+    const p = r.p ?? regs.indexOf(r);
+    const live = r.nodes.filter(n => !n.cond);
+    const side = x => (typeof x === 'number' ? (x < r.s.length ? `t:${r.s[x]}` : 'bye') : typeof x === 'string' ? `${x.slice(0, 2)}${p}.${x.slice(2)}` : x);
+    const fed = new Set(live.flatMap(n => [n.a, n.b]).filter(x => typeof x === 'string' && x.startsWith('w:')).map(x => x.slice(2)));
+    for (const n of live) {
+      nodes.push({ ...n, k: `${p}.${n.k}`, a: side(n.a), b: side(n.b) });
+      if (!fed.has(n.k)) rootOf[p] = `${p}.${n.k}`;
+      depth = Math.max(depth, n.dp || 1);
+    }
+  }
+  for (const n of fin.nodes.filter(x => !x.cond)) {
+    const side = x => (typeof x === 'number' ? (rootOf[x] ? `w:${rootOf[x]}` : 'bye') : typeof x === 'string' ? `${x.slice(0, 2)}F.${x.slice(2)}` : x);
+    nodes.push({ ...n, k: `F.${n.k}`, a: side(n.a), b: side(n.b), dp: (n.dp || 1) + depth });
+  }
+  return { s: [], nodes, k: 'single', home: regs.every(r => r.home) };
+}
+
 export function renderTournament(parts = []) {
   const ds = dynasties().filter(d => Object.values(d.years).some(s => s.champion || s.fieldSize));
   if (!ds.length) { app.innerHTML = '<div class="empty">Upload a dynasty backup on the Data page to see its national tournaments.</div>'; return; }
@@ -208,13 +250,14 @@ export function renderTournament(parts = []) {
   else {
     const ctx = { sport: d.sport, year, reg: s.reg || d.sport.reg || null };
     const natSeed = Object.fromEntries(s.nt.field.map(([t, seed]) => [t, seed]));
-    const [tl, bl, tr, br] = corners(s.nt);
+    const one = oneBracket(s.nt);
+    const [tl, bl, tr, br] = one ? [[], [], [], []] : corners(s.nt);
     const corner = (list, mirror, cls) => `<div class="nt-corner ${cls}">${list.map(e => cornerEvent(ctx, e, mirror, natSeed)).join('')}</div>`;
     const hasCorners = tl.length + bl.length + tr.length + br.length > 0;
     const field = s.nt.field.slice().sort((a, b) => a[1] - b[1]);
     body = `<div class="nt-scroll"><div class="nt-board${hasCorners ? '' : ' solo'}">
         ${hasCorners ? `${corner(tl, false, 'tl')}${corner(bl, false, 'bl')}` : ''}
-        ${centerHtml(ctx, s, s.nt, natSeed)}
+        ${one ? oneHtml(ctx, s, one, natSeed) : centerHtml(ctx, s, s.nt, natSeed)}
         ${hasCorners ? `${corner(tr, true, 'tr')}${corner(br, true, 'br')}` : ''}
       </div></div>
       <div class="card nt-field"><h2>The field</h2><p class="small muted" style="margin-top:0">${field.length} teams by national seed. ★ automatic bid.</p>
