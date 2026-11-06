@@ -67,6 +67,18 @@ with sync_playwright() as p:
     assert "conference champions" in t and "College Cup" in t
     shot(pg, "c-champions-soccer")
 
+    # National tournament brackets: every sport's 2031 tournament, with its champion.
+    ids = {"volleyball-women": "w-volleyball", "volleyball-men": "m-volleyball", "softball-softball": "softball", "softball-baseball": "baseball", "soccer-women": "w-soccer", "soccer-men": "m-soccer", "fhockey-women": "field-hockey", "basketball-women": "w-basketball", "basketball-men": "m-basketball", "lacrosse-women": "w-lacrosse", "lacrosse-men": "m-lacrosse", "hockey-women": "w-hockey", "hockey-men": "m-hockey"}
+    for fname, champ in champs.items():
+        sid = ids[fname.replace(".json", "")]
+        t = visit(pg, f"#/tournament/{sid}/2031", f"t-{sid}")
+        assert "AAU National Tournament" in t and champ in t, (sid, t[:200])
+        assert pg.locator(".nt-champion").count() == 1, sid
+        if sid in ("w-basketball", "w-soccer", "w-volleyball"):
+            assert pg.locator(".nt-corner .nt-bracket").count() == 4, sid
+        if sid == "softball":
+            assert pg.locator(".nt-corner .nt-card").count() == 8, "eight regionals in the corners"
+
     # Badges show names in capitals, so compare without case.
     t = visit(pg, "#/schools", "d-schools").lower()
     assert "stanford" in t and "caltech" in t

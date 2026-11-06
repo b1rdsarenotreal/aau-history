@@ -1,14 +1,15 @@
 // App shell: loading the history, the top bar and page routing.
 
-import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261105153800';
-import { loadLogoTable } from './logos.js?v=20261105153800';
-import { renderSchool } from './school.js?v=20261105153800';
-import { ctx, app, esc } from './ui.js?v=20261105153800';
-import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261105153800';
+import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261105221649';
+import { loadLogoTable } from './logos.js?v=20261105221649';
+import { renderSchool } from './school.js?v=20261105221649';
+import { renderTournament } from './tournament.js?v=20261105221649';
+import { ctx, app, esc } from './ui.js?v=20261105221649';
+import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261105221649';
 
-const VIEWS = { home: 'Home', champions: 'Champions', schools: 'Schools', cup: 'All-Sports Cup', data: 'Data' };
+const VIEWS = { home: 'Home', champions: 'Champions', tournament: 'Tournaments', schools: 'Schools', cup: 'All-Sports Cup', data: 'Data' };
 const SUBVIEWS = { school: 'schools' };
-const RENDER = { home: renderHome, champions: renderChampions, schools: renderSchools, school: () => renderSchool(routeParts()), cup: renderCup, data: renderData };
+const RENDER = { home: renderHome, champions: renderChampions, schools: renderSchools, school: () => renderSchool(routeParts()), tournament: () => renderTournament(routeParts()), cup: renderCup, data: renderData };
 
 function currentView() { const v = location.hash.replace(/^#\/?/, '').split('/')[0]; return VIEWS[v] || SUBVIEWS[v] ? v : 'home'; }
 // The route's parts after the page name, each decoded (a school name may hold any character).

@@ -34,6 +34,13 @@ dynasty apps aren't made from here unless the owner asks.
   program write-up, season by season and coaches. Schedules come from each
   season's compact `games` (EXTRACT_VERSION 2); dates from each sport's
   calendar (`start` in `js/sports.js`, the same rule as its app).
+- National tournaments (`js/tournament.js`, `#/tournament/<sport>/<year>`):
+  each season keeps its bracket in `nt` (EXTRACT_VERSION 3: the field, and
+  every regional, super regional and finals event with its nodes and
+  games). Drawn like a TV bracket: four regions in the corners (the right
+  two mirrored), the finals in the middle; single-elimination events as a
+  bracket, double-elimination regionals and series as cards. National-title
+  banners, the Champions page and school seasons link to it.
 - Uploads merge per sport: new seasons replace, older seasons are kept
   (`mergeDynasty` in `js/store.js`). History is in IndexedDB under
   `aau-history`.

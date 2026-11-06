@@ -7,10 +7,11 @@
 //   with results), a short program history, coaches and every season.
 // Routes: #/school/<name>, #/school/<name>/<sport>, #/school/<name>/<sport>/<year>.
 
-import { ctx, app, esc, dynasties, schoolLook, logoImg, confLogo, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105153800';
-import { cupStandings, cupYears, FINISH_LABEL } from './cup.js?v=20261105153800';
-import { schoolSeasons, schoolTotals } from './views.js?v=20261105153800';
-import { pct } from './extract.js?v=20261105153800';
+import { ctx, app, esc, dynasties, schoolLook, logoImg, confLogo, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105221649';
+import { tournamentUrl } from './tournament.js?v=20261105221649';
+import { cupStandings, cupYears, FINISH_LABEL } from './cup.js?v=20261105221649';
+import { schoolSeasons, schoolTotals } from './views.js?v=20261105221649';
+import { pct } from './extract.js?v=20261105221649';
 
 const enc = encodeURIComponent;
 export const schoolUrl = (name, sport, year) => `#/school/${enc(name)}${sport ? `/${enc(sport)}` : ''}${sport && year ? `/${year}` : ''}`;
@@ -60,7 +61,7 @@ export function bannersOf(name, sportId = null) {
 }
 function bannerHtml(name, b, showSport) {
   const { c1, c2, ink } = colorsOf(name);
-  return `<a class="banner ${b.kind}" href="${schoolUrl(name, b.d.sport.id, b.y)}" style="--bc:${c1};--bt:${c2};--bi:${ink};--gi:${goldInk(c1, c2)}" title="${esc(`${seasonLabel(b.y)} ${b.full || b.title} · ${b.d.sport.name}`)}">
+  return `<a class="banner ${b.kind}" href="${b.kind === 'national' ? tournamentUrl(b.d.sport.id, b.y) : schoolUrl(name, b.d.sport.id, b.y)}" style="--bc:${c1};--bt:${c2};--bi:${ink};--gi:${goldInk(c1, c2)}" title="${esc(`${seasonLabel(b.y)} ${b.full || b.title} · ${b.d.sport.name}${b.kind === 'national' ? ' · see the national tournament' : ''}`)}">
     <span class="bn-logo">${logoImg(name, 30)}</span>
     ${b.kind === 'national' ? '<span class="bn-star">★</span>' : ''}
     <span class="bn-year">${seasonLabel(b.y)}</span>
@@ -210,7 +211,7 @@ function renderSport(name, d, yearArg) {
         ${snap(t.rank ? `#${t.rank}` : 'NR', 'Final ranking')}
         ${snap(esc(t.coach || '—'), 'Coach')}
       </div>
-      <p class="season-line">${s.complete || t.finish ? esc(finishLine(d, s, t)).replace('🏆', '🏆') : 'Season in progress'}${titles.length ? ` · <b>${titles.join(' · ')}</b>` : ''}</p>
+      <p class="season-line">${s.complete || t.finish ? esc(finishLine(d, s, t)).replace('🏆', '🏆') : 'Season in progress'}${t.finish && s.nt ? ` · <a href="${tournamentUrl(d.sport.id, Object.keys(d.years).find(k => d.years[k] === s))}">Bracket →</a>` : ''}${titles.length ? ` · <b>${titles.join(' · ')}</b>` : ''}</p>
       <h3>Schedule and results</h3>
       ${scheduleHtml(d, y, s, name)}
     </div>
