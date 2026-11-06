@@ -1,11 +1,11 @@
 // Pages: home, champions, schools, a school, the all-sports cup, and data.
 
-import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, readableOn, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105222855';
-import { tournamentUrl } from './tournament.js?v=20261105222855';
-import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261105222855';
-import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261105222855';
-import { saveHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261105222855';
-import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261105222855';
+import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, readableOn, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105223531';
+import { tournamentUrl } from './tournament.js?v=20261105223531';
+import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261105223531';
+import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261105223531';
+import { saveHistory, hydrateHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261105223531';
+import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261105223531';
 
 const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '', schoolView: 'badges', schoolSort: 'az' };
 const finishText = (d, s, t) => (t.finish === 'finals' ? s.finalsName : FINISH_LABEL[t.finish] || '');
@@ -28,7 +28,7 @@ export async function handleFiles(files) {
     if (isHistoryBackup(data)) {
       if (!confirm(`Restore ${file.name}? It replaces the whole history in this browser.`)) continue;
       ctx.history = { ...emptyHistory(), ...data };
-      await saveHistory(ctx.history); toast('History restored.'); ctx.render(); continue;
+      ctx.history = hydrateHistory(ctx.history); const ok = await saveHistory(ctx.history); toast(ok ? 'History restored.' : 'History restored for now, but this browser wouldn\'t save it.', !ok); ctx.render(); continue;
     }
     if (!isDynastyBackup(data)) { toast(`${file.name} isn't a dynasty backup (it has no seasons).`, true); continue; }
     const found = detectSport(data);
@@ -39,7 +39,7 @@ export async function handleFiles(files) {
     const ext = extractDynasty(data, sport);
     if (!Object.keys(ext.years).length) { toast(`${file.name} has no played matches yet, so there's no history to add.`, true); continue; }
     const r = mergeDynasty(ctx.history, ext, { fileName: file.name });
-    await saveHistory(ctx.history);
+    if (!(await saveHistory(ctx.history))) { toast(`${sport.name} was added for now, but this browser wouldn't save it, so it will be gone after a reload. Download a history backup from this page to keep it.`, true); continue; }
     toast(`${sport.name}: ${r.added} season${r.added === 1 ? '' : 's'} added, ${r.updated} updated${r.kept ? `, ${r.kept} kept from before` : ''}.`);
   }
   ctx.render();

@@ -3,7 +3,7 @@
 // backup again replaces that sport's seasons with the new ones and keeps any
 // older seasons the new file no longer has. Download/Restore move it.
 
-import { sportWord, sportFamily } from './sports.js?v=20261105222855';
+import { SPORTS, sportWord, sportFamily } from './sports.js?v=20261105223531';
 const DB = 'aau-history', STORE = 'kv', KEY = 'aau-history';
 
 function idb() {
@@ -25,23 +25,38 @@ export async function loadHistory() {
       const r = db.transaction(STORE).objectStore(STORE).get(KEY);
       r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
     });
-    if (v) return v;
+    if (v) return hydrate(v);
   } catch { /* fall through */ }
-  try { return JSON.parse(localStorage.getItem(KEY) || 'null') || emptyHistory(); } catch { return emptyHistory(); }
+  try { return hydrate(JSON.parse(localStorage.getItem(KEY) || 'null') || emptyHistory()); } catch { return emptyHistory(); }
 }
 
+// Saved sports are plain data (a sport's calendar rule is a function, which
+// can't be saved): give each known sport its profile back on load.
+export function hydrateHistory(h) { return hydrate(h); }
+function hydrate(h) {
+  for (const d of Object.values(h?.dynasties || {})) if (d?.sport && SPORTS[d.sport.id]) d.sport = { ...d.sport, ...SPORTS[d.sport.id] };
+  return h;
+}
+
+// Saves the history; returns false if neither IndexedDB nor localStorage
+// took it. IndexedDB gets plain data: the sports' calendar functions made
+// every save there fail (a DataCloneError) and fall back to localStorage,
+// which is too small for schedules and brackets, so a reload brought back
+// an older history.
 export async function saveHistory(h) {
   h.updated = new Date().toISOString();
+  const plain = JSON.parse(JSON.stringify(h));
   try {
     const db = await idb();
     await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(h, KEY);
-      tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+      tx.objectStore(STORE).put(plain, KEY);
+      tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error);
     });
-    return;
-  } catch { /* fall through */ }
-  try { localStorage.setItem(KEY, JSON.stringify(h)); } catch { /* quota */ }
+    try { localStorage.removeItem(KEY); } catch { /* fine */ } // the old fallback copy, now stale
+    return true;
+  } catch (e) { console.warn('IndexedDB save failed', e); }
+  try { localStorage.setItem(KEY, JSON.stringify(plain)); return true; } catch (e) { console.warn('localStorage save failed', e); return false; }
 }
 
 // Add (or refresh) one dynasty's history. Seasons in the new extract win;

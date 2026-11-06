@@ -6,8 +6,8 @@
 // cards with their teams and games.
 // Route: #/tournament/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261105222855';
-import { schoolUrl } from './school.js?v=20261105222855';
+import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261105223531';
+import { schoolUrl } from './school.js?v=20261105223531';
 
 const enc = encodeURIComponent;
 export const tournamentUrl = (sport, year) => `#/tournament/${enc(sport)}${year != null ? `/${year}` : ''}`;

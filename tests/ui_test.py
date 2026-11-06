@@ -81,6 +81,14 @@ with sync_playwright() as p:
         if sid == "softball":
             assert pg.locator(".nt-corner .nt-card").count() == 8, "eight regionals in the corners"
 
+    # Everything survives a reload: saved to IndexedDB as plain data (a
+    # sport's calendar function used to make that save fail).
+    pg.reload(); pg.wait_for_timeout(800)
+    t = visit(pg, "#/tournament/m-hockey/2031")
+    assert pg.locator(".nt-bracket").count() == 1 and champs["hockey-men.json"] in t, "bracket after a reload"
+    assert pg.evaluate("localStorage.getItem('aau-history')") is None, "saved to IndexedDB, not the small localStorage"
+
+
     # Badges show names in capitals, so compare without case.
     t = visit(pg, "#/schools", "d-schools").lower()
     assert "stanford" in t and "caltech" in t
