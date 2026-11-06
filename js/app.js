@@ -1,11 +1,11 @@
 // App shell: loading the history, the top bar and page routing.
 
-import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261105222751';
-import { loadLogoTable } from './logos.js?v=20261105222751';
-import { renderSchool } from './school.js?v=20261105222751';
-import { renderTournament } from './tournament.js?v=20261105222751';
-import { ctx, app, esc } from './ui.js?v=20261105222751';
-import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261105222751';
+import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261105222855';
+import { loadLogoTable } from './logos.js?v=20261105222855';
+import { renderSchool } from './school.js?v=20261105222855';
+import { renderTournament } from './tournament.js?v=20261105222855';
+import { ctx, app, esc } from './ui.js?v=20261105222855';
+import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261105222855';
 
 const VIEWS = { home: 'Home', champions: 'Champions', tournament: 'Tournaments', schools: 'Schools', cup: 'All-Sports Cup', data: 'Data' };
 const SUBVIEWS = { school: 'schools' };

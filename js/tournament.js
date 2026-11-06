@@ -6,8 +6,8 @@
 // cards with their teams and games.
 // Route: #/tournament/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261105222751';
-import { schoolUrl } from './school.js?v=20261105222751';
+import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261105222855';
+import { schoolUrl } from './school.js?v=20261105222855';
 
 const enc = encodeURIComponent;
 export const tournamentUrl = (sport, year) => `#/tournament/${enc(sport)}${year != null ? `/${year}` : ''}`;
@@ -67,9 +67,13 @@ function matchBox(ctx, ev, byKey, n, seedFor) {
 function bracketHtml(ctx, ev, seedFor, { mirror = false, title = '', wide = false } = {}) {
   // A wide bracket (the one-bracket view) has room for full school names.
   const BW = wide ? 186 : BOX_W, CW = BW + (wide ? 28 : BOX_GAP_W);
-  const nodes = ev.nodes.filter(n => !n.cond);
+  // A game against a bye isn't drawn (the owner's call): the team with the
+  // bye starts in the next round, next to an empty slot.
+  const bye = x => x === 'bye' || (typeof x === 'number' && x >= ev.s.length);
+  const nodes = ev.nodes.filter(n => !n.cond && !bye(n.a) && !bye(n.b));
   if (!nodes.length) return '';
   const byKey = Object.fromEntries(ev.nodes.map(n => [n.k, n]));
+  const drawn = new Set(nodes.map(n => n.k));
   const fed = new Set(nodes.flatMap(n => [n.a, n.b]).filter(s => typeof s === 'string' && s.startsWith('w:')).map(s => s.slice(2)));
   const roots = nodes.filter(n => !fed.has(n.k));
   const minDp = Math.min(...nodes.map(n => n.dp || 1));
@@ -77,7 +81,7 @@ function bracketHtml(ctx, ev, seedFor, { mirror = false, title = '', wide = fals
   const pos = {};
   const place = n => {
     const sides = [n.a, n.b];
-    const kids = sides.map(s => (typeof s === 'string' && s.startsWith('w:') ? byKey[s.slice(2)] : null));
+    const kids = sides.map(s => (typeof s === 'string' && s.startsWith('w:') && drawn.has(s.slice(2)) ? byKey[s.slice(2)] : null));
     let y;
     if (!kids.some(Boolean)) y = slot++;
     else {
