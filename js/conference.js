@@ -8,11 +8,11 @@
 // Routes: #/conferences, #/conference/<name>, #/conference/<name>/<sport>,
 // #/conference/<name>/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, confLogo, rec, confRec, seasonLabel, readableOn } from './ui.js?v=20261107012708';
-import { schoolUrl } from './school.js?v=20261107012708';
-import { tournamentUrl, bracketHtml, eventCard, nameNeed } from './tournament.js?v=20261107012708';
-import { FINISH_LABEL } from './cup.js?v=20261107012708';
-import { pct } from './extract.js?v=20261107012708';
+import { app, esc, dynasties, logoImg, confLogo, rec, confRec, seasonLabel, readableOn } from './ui.js?v=20261107144328';
+import { schoolUrl } from './school.js?v=20261107144328';
+import { tournamentUrl, bracketHtml, eventCard, nameNeed, isDouble, deBracketHtml } from './tournament.js?v=20261107144328';
+import { FINISH_LABEL } from './cup.js?v=20261107144328';
+import { pct } from './extract.js?v=20261107144328';
 
 const enc = encodeURIComponent;
 export const conferenceUrl = (name, sport, year) => `#/conference/${enc(name)}${sport ? `/${enc(sport)}` : ''}${sport && year ? `/${year}` : ''}`;
@@ -81,8 +81,9 @@ function confTournamentHtml(d, y, s, conf) {
   const ctx = { sport: d.sport, year: y, reg: s.reg ?? d.sport.reg };
   const seedFor = t => { const i = ev.s.indexOf(t); return i >= 0 ? i + 1 : ''; };
   const head = `<p class="small muted">${ev.s.length} teams${ev.v ? ` · ${esc(ev.v)}` : ev.h ? ` · hosted by ${esc(ev.h)}` : ''}${ev.c ? ` · <b>Champion: ${esc(ev.c)}</b>` : ''}</p>`;
-  if (ev.k !== 'single') return head + eventCard(ctx, ev, (t, i) => (i != null ? i + 1 : seedFor(t)), '');
   const bw = Math.max(190, nameNeed(ev.s));
+  if (isDouble(ev)) return `${head}<div class="nt-scroll">${deBracketHtml(ctx, ev, seedFor, { bw })}</div>`;
+  if (ev.k !== 'single') return head + eventCard(ctx, ev, (t, i) => (i != null ? i + 1 : seedFor(t)), '');
   return `${head}<div class="nt-scroll">${bracketHtml(ctx, ev, seedFor, { bw })}</div>`;
 }
 

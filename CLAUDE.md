@@ -39,7 +39,10 @@ dynasty apps aren't made from here unless the owner asks.
   every regional, super regional and finals event with its nodes and
   games). Drawn like a TV bracket: four regions in the corners (the right
   two mirrored), the finals in the middle; single-elimination events as a
-  bracket, double-elimination regionals and series as cards. A field of
+  bracket; double elimination (`deBracketHtml`: winners' bracket over the
+  elimination bracket, the final and the if-necessary game at the right) as
+  a bracket too, with the finals on top of the corners (the 'tall' board);
+  series as cards. A field of
   `ONE_BRACKET_MAX` (12) or fewer, all single elimination, is one bracket
   with national seeds (the owner's call). Games against a bye aren't drawn.
   Boxes are sized to fill the window (`fitSizes`) and never cut a school's

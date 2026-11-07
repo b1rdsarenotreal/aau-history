@@ -6,8 +6,8 @@
 // cards with their teams and games.
 // Route: #/tournament/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261107012708';
-import { schoolUrl } from './school.js?v=20261107012708';
+import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261107144328';
+import { schoolUrl } from './school.js?v=20261107144328';
 
 const enc = encodeURIComponent;
 export const tournamentUrl = (sport, year) => `#/tournament/${enc(sport)}${year != null ? `/${year}` : ''}`;
@@ -48,6 +48,14 @@ function extraText(sport, reg, g) {
   return s;
 }
 
+// An undecided side: "Winner of Game 1", "Loser of G4", or TBD.
+function pending(byKey, side) {
+  if (typeof side !== 'string' || !/^[wl]:/.test(side)) return 'TBD';
+  const n = byKey[side.slice(2)], name = n ? shortLabel(n) : side.slice(2);
+  return `${side[0] === 'w' ? 'Winner' : 'Loser'} of ${name}`;
+}
+const shortLabel = n => (n.lb || n.k).replace(/\s*\((elimination|if necessary)\)/i, '');
+
 // One match box: two rows (seed, logo, school, score), the winner bold.
 function matchBox(ctx, ev, byKey, n, seedFor) {
   const ta = sideTeam(ev, byKey, n.a), tb = sideTeam(ev, byKey, n.b), g = n.g;
@@ -58,7 +66,7 @@ function matchBox(ctx, ev, byKey, n, seedFor) {
     const sc = scoreOf(g, t), won = n.w && n.w === t, lost = n.w && n.w !== t && t;
     return `<div class="nt-row${won ? ' won' : ''}${lost ? ' lost' : ''}">
       <span class="nt-seed">${t ? esc(seedFor(t) ?? '') : ''}</span>
-      ${t ? `<span class="nt-logo">${logoImg(t, 16)}</span><a class="nt-name" href="${schoolUrl(t, ctx.sport.id, ctx.year)}" title="${esc(t)}">${esc(t)}</a>` : '<span class="nt-name muted">TBD</span>'}
+      ${t ? `<span class="nt-logo">${logoImg(t, 16)}</span><a class="nt-name" href="${schoolUrl(t, ctx.sport.id, ctx.year)}" title="${esc(t)}">${esc(t)}</a>` : `<span class="nt-name muted">${esc(pending(byKey, side))}</span>`}
       <span class="nt-score">${sc ?? ''}</span></div>`;
   };
   const extra = extraText(ctx.sport, ctx.reg, g);
@@ -146,6 +154,78 @@ export function eventCard(ctx, ev, seedFor, title) {
   </div>`;
 }
 
+// Double elimination (a softball or baseball regional, a World Series
+// bracket, a conference tournament): the winners' bracket on top, the
+// elimination bracket under it, the final at the right between them and the
+// "if necessary" game under the final. Each box carries its game's name;
+// a team that dropped down shows as "Loser of Game 1" until it's decided.
+export const isDouble = ev => ev.k !== 'single' && ev.nodes.some(n => n.sec === 'L');
+const DE_SLOT = 76, DE_TOP = 40, DE_GAP = 52;
+function deLayout(ev) {
+  const byKey = Object.fromEntries(ev.nodes.map(n => [n.k, n]));
+  const pos = {};
+  let maxX = 0;
+  const lay = (sec, y0) => {
+    const nodes = ev.nodes.filter(n => n.sec === sec && !n.cond);
+    const inSec = new Set(nodes.map(n => n.k));
+    const kidsOf = n => [n.a, n.b].map(x => (typeof x === 'string' && x.startsWith('w:') && inSec.has(x.slice(2)) ? byKey[x.slice(2)] : null));
+    const fed = new Set(nodes.flatMap(n => kidsOf(n).filter(Boolean).map(k => k.k)));
+    let slot = 0;
+    const place = n => {
+      if (pos[n.k]) return pos[n.k].slot;
+      const kids = kidsOf(n).filter(Boolean);
+      const y = kids.length ? kids.map(place).reduce((a, b) => a + b, 0) / kids.length : slot++;
+      pos[n.k] = { x: n.col ?? 0, slot: y, sec };
+      maxX = Math.max(maxX, n.col ?? 0);
+      return y;
+    };
+    nodes.filter(n => !fed.has(n.k)).forEach(place);
+    for (const n of nodes) if (pos[n.k]) pos[n.k].y = y0 + pos[n.k].slot * DE_SLOT;
+    const roots = nodes.filter(n => !fed.has(n.k));
+    return { slots: Math.max(slot, 1), root: roots[roots.length - 1] };
+  };
+  const W = lay('W', DE_TOP);
+  const lTop = DE_TOP + W.slots * DE_SLOT + DE_GAP;
+  const L = lay('L', lTop);
+  const fx = maxX + 1;
+  const fin = ev.nodes.filter(n => n.sec === 'F' || (!n.sec && !pos[n.k]));
+  const wy = W.root ? pos[W.root.k].y : DE_TOP, ly = L.root ? pos[L.root.k].y : lTop;
+  let fy = (wy + ly) / 2;
+  for (const n of fin) { pos[n.k] = { x: fx, y: fy, sec: 'F' }; fy += DE_SLOT + 6; }
+  const H = Math.max(...Object.values(pos).map(p => p.y)) + BH + 4;
+  return { pos, byKey, cols: fx + 1, H, lTop };
+}
+export const deCols = ev => deLayout(ev).cols;
+export function deBracketHtml(ctx, ev, seedFor, { mirror = false, title = '', bw = 0 } = {}) {
+  const BW = bw || SIZE.bw, CW = BW + SIZE.oneGap;
+  const { pos, byKey, cols, H, lTop } = deLayout(ev);
+  const W = (cols - 1) * CW + BW;
+  const lines = [];
+  for (const n of ev.nodes) {
+    const p = pos[n.k];
+    if (!p || n.cond) continue;
+    [n.a, n.b].forEach((x, i) => {
+      if (!(typeof x === 'string' && x.startsWith('w:')) || !pos[x.slice(2)]) return;
+      const c = pos[x.slice(2)];
+      const x1 = c.x * CW + BW, y1 = c.y + BH / 2, x2 = p.x * CW, y2 = p.y + (i ? BH * 0.75 : BH * 0.25), xm = x1 + (x2 - x1) / 2;
+      lines.push(`M${x1} ${y1}H${xm}V${y2}H${x2}`);
+    });
+  }
+  const label = (txt, y) => `<div class="nt-slot nt-sec" style="left:0;top:${y}px;--bw:${W}px"><span>${esc(txt)}</span></div>`;
+  const box = n => {
+    const p = pos[n.k];
+    const skipped = n.cond && !n.g && (ev.c || n.w == null) && ev.c;
+    return `<div class="nt-slot de${n.cond ? ' ifnec' : ''}${skipped ? ' skipped' : ''}" style="left:${p.x * CW}px;top:${p.y}px;--bw:${BW}px"><div class="nt-glabel">${esc(n.cond ? (skipped ? 'If necessary (not needed)' : `${shortLabel(n)}, if necessary`) : (n.lb || n.k))}</div>${matchBox(ctx, ev, byKey, n, seedFor)}</div>`;
+  };
+  return `<div class="nt-bracket de-bracket${mirror ? ' mirror' : ''}">
+    ${title}
+    <div class="nt-tree" style="width:${W}px;height:${H}px">
+      <svg class="nt-lines" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${lines.join('')}"/></svg>
+      ${label("Winners' bracket", 0)}${label('Elimination bracket', lTop - DE_TOP + 4)}
+      ${ev.nodes.filter(n => pos[n.k]).map(box).join('')}
+    </div></div>`;
+}
+
 const evTitle = (ev, fallback) => `<b>${esc(ev.n || fallback)}</b>${ev.v ? `<span class="muted small"> · ${esc(ev.v)}</span>` : ev.home ? '<span class="muted small"> · at the higher seed\'s home</span>' : ''}`;
 
 // One event at a corner: a bracket for single elimination, else a card.
@@ -153,6 +233,10 @@ function cornerEvent(ctx, ev, mirror, natSeed) {
   if (ev.k === 'single') {
     const seedFor = t => { const i = ev.s.indexOf(t); return i >= 0 ? i + 1 : ''; };
     return bracketHtml(ctx, ev, seedFor, { mirror, title: `<div class="nt-ev-title">${evTitle(ev, 'Region')}${ev.c ? `<span class="nt-ev-champ">${logoImg(ev.c, 16)} ${esc(ev.c)}</span>` : ''}</div>` });
+  }
+  if (isDouble(ev)) {
+    const seedFor = t => { const i = ev.s.indexOf(t); return i >= 0 ? i + 1 : ''; };
+    return deBracketHtml(ctx, ev, seedFor, { mirror, title: `<div class="nt-ev-title">${evTitle(ev, 'Regional')}${ev.c ? `<span class="nt-ev-champ">${logoImg(ev.c, 16)} ${esc(ev.c)}</span>` : ''}</div>` });
   }
   const seedFor = (t, i) => (i != null ? `${i + 1}${natSeed[t] ? ` · #${natSeed[t]}` : ''}` : natSeed[t] ?? '');
   return eventCard(ctx, ev, seedFor, evTitle(ev, ev.st === 'sup' ? 'Super regional' : 'Regional'));
@@ -182,7 +266,7 @@ function centerHtml(ctx, s, nt, natSeed) {
   const series = nt.events.find(e => e.st === 'fins');
   const seedNat = t => natSeed[t] ?? '';
   return `<div class="nt-center">${head}${champ}<div class="nt-finb">
-    ${brackets.map((e, i) => eventCard(ctx, e, seedNat, `<b>Bracket ${esc(e.b || i + 1)}</b>`)).join('')}
+    ${brackets.map((e, i) => (isDouble(e) ? deBracketHtml(ctx, e, seedNat, { title: `<div class="nt-ev-title"><b>Bracket ${esc(e.b || i + 1)}</b>${e.c ? `<span class="nt-ev-champ">${logoImg(e.c, 16)} ${esc(e.c)}</span>` : ''}</div>` }) : eventCard(ctx, e, seedNat, `<b>Bracket ${esc(e.b || i + 1)}</b>`))).join('')}
     ${series ? eventCard(ctx, series, seedNat, '<b>Championship series</b>') : ''}</div></div>`;
 }
 // The one-bracket view: the finals' heading and champion over the whole bracket.
@@ -268,16 +352,23 @@ function fitSizes(nt, one, corners4) {
     const bw = fit(w => (cols - 1) * (w + SIZE.oneGap) + w + 40, 150, 320);
     return { ...SIZE, one: Math.max(bw, need) + extra };
   }
-  const evs = corners4.flat(), cards = evs.some(e => e.k !== 'single');
+  const evs = corners4.flat(), cards = evs.some(e => e.k !== 'single' && !isDouble(e));
   const cols = Math.max(1, ...evs.filter(e => e.k === 'single').map(drawnCols));
-  const cornerW = w => (cards ? w + 40 : (cols - 1) * (w + SIZE.gap) + w);
+  const deC = Math.max(0, ...evs.filter(isDouble).map(deCols));
+  const deW = (w, c) => (c - 1) * (w + SIZE.oneGap) + w;
+  const cornerW = w => Math.max(cards ? w + 40 : 0, (cols - 1) * (w + SIZE.gap) + w, deC ? deW(w, deC) : 0);
   const fin = nt.events.find(e => e.st === 'fin');
-  const centerW = w => (fin && fin.k === 'single' ? Math.max(230, w + 64) : 2 * (w + 40) + 14 + 34);
-  const stacked = window.innerWidth <= 900; // corners stack under the finals
-  const total = w => (stacked ? Math.max(cornerW(w), centerW(w)) : 2 * cornerW(w) + centerW(w) + 52);
+  const finb = nt.events.filter(e => e.st === 'finb'), finDe = Math.max(0, ...finb.filter(isDouble).map(deCols));
+  const centerW = w => (fin && fin.k === 'single' ? Math.max(230, w + 64) : finDe ? 2 * deW(w, finDe) + 14 + 34 : 2 * (w + 40) + 14 + 34);
+  // Double-elimination regionals are wide: the finals go on top, the
+  // corners under them (the board's 'tall' layout).
+  const stacked = window.innerWidth <= 900 || tallBoard(corners4); // corners stack under the finals
+  const total = w => (window.innerWidth <= 900 ? Math.max(cornerW(w), centerW(w)) : stacked ? Math.max(centerW(w), 2 * cornerW(w) + 22) : 2 * cornerW(w) + centerW(w) + 52);
   const bw = fit(total, 130, 300);
   return { ...SIZE, bw: Math.max(bw, need) + extra, one: Math.max(bw, need) + extra };
 }
+
+const tallBoard = corners4 => corners4.flat().some(isDouble);
 
 // The canvas guess at a name's width can fall short of the page's own type;
 // after drawing, any name still cut off widens the boxes by what's missing
@@ -309,7 +400,7 @@ export function renderTournament(parts = [], again = false) {
     const corner = (list, mirror, cls) => `<div class="nt-corner ${cls}">${list.map(e => cornerEvent(ctx, e, mirror, natSeed)).join('')}</div>`;
     const hasCorners = tl.length + bl.length + tr.length + br.length > 0;
     const field = s.nt.field.slice().sort((a, b) => a[1] - b[1]);
-    body = `<div class="nt-scroll"><div class="nt-board${hasCorners ? '' : ' solo'}" style="--bw:${SIZE.bw}px">
+    body = `<div class="nt-scroll"><div class="nt-board${hasCorners ? '' : ' solo'}${hasCorners && tallBoard([tl, bl, tr, br]) ? ' tall' : ''}" style="--bw:${SIZE.bw}px">
         ${hasCorners ? `${corner(tl, false, 'tl')}${corner(bl, false, 'bl')}` : ''}
         ${one ? oneHtml(ctx, s, one, natSeed) : centerHtml(ctx, s, s.nt, natSeed)}
         ${hasCorners ? `${corner(tr, true, 'tr')}${corner(br, true, 'br')}` : ''}

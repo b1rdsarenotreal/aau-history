@@ -1116,3 +1116,12 @@ table.members .dot { color: var(--ink); font-size: 12px; }
 .nat-list { list-style: none; padding: 0; margin: 0; columns: 2 280px; }
 .nat-list li { padding: 4px 0; break-inside: avoid; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .snap .l a { color: inherit; }
+
+/* Double-elimination brackets */
+.nt-slot.de .nt-glabel { position: absolute; left: 2px; top: -15px; width: var(--bw); font-size: 10.5px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-slot.de.ifnec .nt-match { border-style: dashed; }
+.nt-slot.de.skipped .nt-match { opacity: .5; }
+.nt-sec span { display: block; width: var(--bw); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+.nt-board.tall { grid-template-columns: auto auto; grid-template-areas: "c c" "tl tr" "bl br"; }
+.nt-board.tall .nt-center { justify-self: center; }
+.nt-bracket.mirror .nt-sec span { text-align: right; }

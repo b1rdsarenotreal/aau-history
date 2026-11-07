@@ -79,7 +79,8 @@ with sync_playwright() as p:
         if sid in ("m-hockey", "w-hockey", "m-lacrosse", "field-hockey"):
             assert pg.locator(".nt-corner").count() == 0 and pg.locator(".nt-center .nt-bracket").count() == 1, f"{sid}: a field of 12 or fewer is one bracket"
         if sid == "softball":
-            assert pg.locator(".nt-corner .nt-card").count() == 8, "eight regionals in the corners"
+            assert pg.locator(".nt-corner .de-bracket").count() == 8, "eight regionals in the corners, drawn as double-elimination brackets"
+            assert pg.locator(".nt-center .de-bracket").count() == 2, "both World Series brackets drawn"
 
     # Conference pages: the list, a conference's all-sports page, and one
     # sport's season with standings and the conference tournament bracket.
