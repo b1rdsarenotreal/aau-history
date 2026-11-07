@@ -1099,3 +1099,20 @@ tr.cur td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
   .nt-board { grid-template-columns: auto; grid-template-areas: "c" "tl" "bl" "tr" "br"; }
   .nt-corner.tr, .nt-corner.br { align-items: flex-start; }
 }
+
+/* ---------- conference pages (#/conferences, #/conference/…) ---------- */
+.conf-group-head a { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.conf-group-head a:hover { text-decoration: underline; }
+.conf-logo { border-radius: 18px; }
+.conf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.conf-card { --c1: #33424d; --hi: #fff; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: center; padding: 14px 16px; border-radius: 14px; background: var(--c1); color: var(--hi); text-decoration: none; box-shadow: 0 2px 8px rgba(15,27,45,.12); transition: transform .12s ease, box-shadow .12s ease; }
+.conf-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15,27,45,.18); }
+.cc-logo { grid-row: 1 / span 2; width: 68px; height: 68px; display: grid; place-items: center; border-radius: 14px; background: #fff; }
+.cc-name { font: 800 18px/1.15 var(--display); }
+.cc-sub { font-size: 12.5px; opacity: .85; }
+table.conf-standings td { vertical-align: middle; }
+tr.champ-row td { background: color-mix(in srgb, var(--gold, #c9a227) 10%, transparent); }
+table.members .dot { color: var(--ink); font-size: 12px; }
+.nat-list { list-style: none; padding: 0; margin: 0; columns: 2 280px; }
+.nat-list li { padding: 4px 0; break-inside: avoid; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.snap .l a { color: inherit; }

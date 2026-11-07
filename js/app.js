@@ -1,15 +1,16 @@
 // App shell: loading the history, the top bar and page routing.
 
-import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261105224258';
-import { loadLogoTable } from './logos.js?v=20261105224258';
-import { renderSchool } from './school.js?v=20261105224258';
-import { renderTournament } from './tournament.js?v=20261105224258';
-import { ctx, app, esc } from './ui.js?v=20261105224258';
-import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261105224258';
+import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261106235554';
+import { loadLogoTable } from './logos.js?v=20261106235554';
+import { renderSchool } from './school.js?v=20261106235554';
+import { renderTournament } from './tournament.js?v=20261106235554';
+import { renderConference, renderConferences } from './conference.js?v=20261106235554';
+import { ctx, app, esc } from './ui.js?v=20261106235554';
+import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261106235554';
 
-const VIEWS = { home: 'Home', champions: 'Champions', tournament: 'Tournaments', schools: 'Schools', cup: 'All-Sports Cup', data: 'Data' };
-const SUBVIEWS = { school: 'schools' };
-const RENDER = { home: renderHome, champions: renderChampions, schools: renderSchools, school: () => renderSchool(routeParts()), tournament: () => renderTournament(routeParts()), cup: renderCup, data: renderData };
+const VIEWS = { home: 'Home', champions: 'Champions', tournament: 'Tournaments', schools: 'Schools', conferences: 'Conferences', cup: 'All-Sports Cup', data: 'Data' };
+const SUBVIEWS = { school: 'schools', conference: 'conferences' };
+const RENDER = { home: renderHome, champions: renderChampions, schools: renderSchools, school: () => renderSchool(routeParts()), tournament: () => renderTournament(routeParts()), conferences: renderConferences, conference: () => renderConference(routeParts()), cup: renderCup, data: renderData };
 
 function currentView() { const v = location.hash.replace(/^#\/?/, '').split('/')[0]; return VIEWS[v] || SUBVIEWS[v] ? v : 'home'; }
 // The route's parts after the page name, each decoded (a school name may hold any character).

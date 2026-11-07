@@ -7,11 +7,12 @@
 //   with results), a short program history, coaches and every season.
 // Routes: #/school/<name>, #/school/<name>/<sport>, #/school/<name>/<sport>/<year>.
 
-import { ctx, app, esc, dynasties, schoolLook, logoImg, confLogo, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105224258';
-import { tournamentUrl } from './tournament.js?v=20261105224258';
-import { cupStandings, cupYears, FINISH_LABEL } from './cup.js?v=20261105224258';
-import { schoolSeasons, schoolTotals } from './views.js?v=20261105224258';
-import { pct } from './extract.js?v=20261105224258';
+import { ctx, app, esc, dynasties, schoolLook, logoImg, confLogo, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261106235554';
+import { tournamentUrl } from './tournament.js?v=20261106235554';
+import { conferenceUrl } from './conference.js?v=20261106235554';
+import { cupStandings, cupYears, FINISH_LABEL } from './cup.js?v=20261106235554';
+import { schoolSeasons, schoolTotals } from './views.js?v=20261106235554';
+import { pct } from './extract.js?v=20261106235554';
 
 const enc = encodeURIComponent;
 export const schoolUrl = (name, sport, year) => `#/school/${enc(name)}${sport ? `/${enc(sport)}` : ''}${sport && year ? `/${year}` : ''}`;
@@ -61,7 +62,7 @@ export function bannersOf(name, sportId = null) {
 }
 function bannerHtml(name, b, showSport) {
   const { c1, c2, ink } = colorsOf(name);
-  return `<a class="banner ${b.kind}" href="${b.kind === 'national' ? tournamentUrl(b.d.sport.id, b.y) : schoolUrl(name, b.d.sport.id, b.y)}" style="--bc:${c1};--bt:${c2};--bi:${ink};--gi:${goldInk(c1, c2)}" title="${esc(`${seasonLabel(b.y)} ${b.full || b.title} · ${b.d.sport.name}${b.kind === 'national' ? ' · see the national tournament' : ''}`)}">
+  return `<a class="banner ${b.kind}" href="${b.kind === 'national' ? tournamentUrl(b.d.sport.id, b.y) : conferenceUrl(b.conf, b.d.sport.id, b.y)}" style="--bc:${c1};--bt:${c2};--bi:${ink};--gi:${goldInk(c1, c2)}" title="${esc(`${seasonLabel(b.y)} ${b.full || b.title} · ${b.d.sport.name}${b.kind === 'national' ? ' · see the national tournament' : ' · see the conference season'}`)}">
     <span class="bn-logo">${logoImg(name, 30)}</span>
     ${b.kind === 'national' ? '<span class="bn-star">★</span>' : ''}
     <span class="bn-year">${seasonLabel(b.y)}</span>
@@ -207,7 +208,7 @@ function renderSport(name, d, yearArg) {
         <label class="small muted">Season <select id="sch-year">${[...years].reverse().map(v => `<option value="${v}" ${v === y ? 'selected' : ''}>${seasonLabel(v)}</option>`).join('')}</select></label></div>
       <div class="snaps">
         ${snap(rec(t), 'Overall')}
-        ${t.cw + t.cl + t.ct ? snap(confRec(t), `${t.conf ? `${confLogo(d, t.conf, 14)} ` : ''}Conference${place ? ` · ${place}` : ''}`) : ''}
+        ${t.cw + t.cl + t.ct ? snap(confRec(t), `${t.conf ? `<a href="${conferenceUrl(t.conf, d.sport.id, y)}" title="${esc(t.conf)}">${confLogo(d, t.conf, 14)} Conference</a>` : 'Conference'}${place ? ` · ${place}` : ''}`) : ''}
         ${snap(t.rank ? `#${t.rank}` : 'NR', 'Final ranking')}
         ${snap(esc(t.coach || '—'), 'Coach')}
       </div>

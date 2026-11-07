@@ -6,8 +6,8 @@
 // cards with their teams and games.
 // Route: #/tournament/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261105224258';
-import { schoolUrl } from './school.js?v=20261105224258';
+import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261106235554';
+import { schoolUrl } from './school.js?v=20261106235554';
 
 const enc = encodeURIComponent;
 export const tournamentUrl = (sport, year) => `#/tournament/${enc(sport)}${year != null ? `/${year}` : ''}`;
@@ -68,9 +68,10 @@ function matchBox(ctx, ev, byKey, n, seedFor) {
 // A single-elimination event drawn as a bracket. Every first-round game and
 // every team with a bye takes a slot; a later game sits halfway between the
 // two it comes from. `mirror` flows right to left.
-function bracketHtml(ctx, ev, seedFor, { mirror = false, title = '', wide = false } = {}) {
-  // A wide bracket (the one-bracket view) gets its own, wider boxes.
-  const BW = wide ? SIZE.one : SIZE.bw, CW = BW + (wide ? SIZE.oneGap : SIZE.gap);
+export function bracketHtml(ctx, ev, seedFor, { mirror = false, title = '', wide = false, bw = 0 } = {}) {
+  // A wide bracket (the one-bracket view) gets its own, wider boxes; `bw`
+  // sets the width outright (conference pages).
+  const BW = bw || (wide ? SIZE.one : SIZE.bw), CW = BW + (bw || wide ? SIZE.oneGap : SIZE.gap);
   // A game against a bye isn't drawn (the owner's call): the team with the
   // bye starts in the next round, next to an empty slot.
   const bye = x => x === 'bye' || (typeof x === 'number' && x >= ev.s.length);
@@ -123,7 +124,7 @@ function bracketHtml(ctx, ev, seedFor, { mirror = false, title = '', wide = fals
 // A regional, super regional or finals bracket played some other way
 // (double elimination, a series): its teams with their record there, and
 // its games.
-function eventCard(ctx, ev, seedFor, title) {
+export function eventCard(ctx, ev, seedFor, title) {
   const byKey = Object.fromEntries(ev.nodes.map(n => [n.k, n]));
   const played = ev.nodes.filter(n => n.g && n.g.hr != null);
   const recs = Object.fromEntries(ev.s.map(t => [t, { w: 0, l: 0 }]));
@@ -249,7 +250,7 @@ function drawnCols(ev) {
 // The width the longest school name needs, in a match box's bold 12.5px
 // type, plus the box's seed, logo, score and padding.
 let measureCtx = null;
-function nameNeed(names) {
+export function nameNeed(names) {
   measureCtx ||= document.createElement('canvas').getContext('2d');
   measureCtx.font = "700 12.5px 'Public Sans', system-ui, sans-serif";
   return Math.ceil(Math.max(80, ...names.map(t => measureCtx.measureText(t).width))) + 72;

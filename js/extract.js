@@ -6,7 +6,7 @@
 
 // Bump when the summary's shape or meaning changes; the Data page then asks
 // for a fresh upload of older entries.
-export const EXTRACT_VERSION = 3; // 2: games for the schools' schedules; 3: national tournament brackets
+export const EXTRACT_VERSION = 4; // 2: games for the schools' schedules; 3: national tournament brackets; 4: conference tournament brackets
 
 const NATIONAL = new Set(['regional', 'super', 'mcws']);
 const isFinal = g => g && g.final && g.homeR != null && g.awayR != null;
@@ -90,24 +90,18 @@ function compactGames(season) {
 // Node sides are a seed index into the event's seeds (a number) or another
 // node's winner or loser ('w:KEY', 'l:KEY').
 const STAGE = { regionals: 'reg', supers: 'sup', mcws: 'fin', mcwsBrackets: 'finb', mcwsFinals: 'fins' };
-function compactTournament(season) {
-  const post = season.post || {};
-  if (!post.field?.length) return null;
-  const games = new Map((season.games || []).map(g => [g.id, g]));
+// One bracket event (a regional, a finals bracket, a conference tournament)
+// in a compact form: its seeds, champion, site and nodes with their games.
+function compactEvent(season, ev, st, games) {
   const side = x => (x == null ? null : 'seed' in x ? x.seed : x.w != null ? `w:${x.w}` : x.l != null ? `l:${x.l}` : null);
-  const site = ev => {
+  const site = () => {
     if (ev.venue && typeof ev.venue === 'object') return [ev.venue.stadium, ev.venue.city].filter(Boolean).join(', ');
     const h = ev.host && season.teams[ev.host];
     return h ? [h.stadium, h.city].filter(Boolean).join(', ') : '';
   };
-  const events = [];
-  for (const [key, st] of Object.entries(STAGE)) {
-    const list = Array.isArray(post[key]) ? post[key] : post[key] ? [post[key]] : [];
-    for (const ev of list) {
-      if (!ev?.nodes) continue;
-      events.push({
+  return {
         id: ev.id, st, k: ev.kind, n: ev.name || null, p: ev.path ?? null, b: ev.bracket || null,
-        h: ev.host || null, v: site(ev) || null, home: ev.homeSites ? 1 : undefined,
+        h: ev.host || null, v: site() || null, home: ev.homeSites ? 1 : undefined,
         s: ev.seeds || [], c: ev.champion || null,
         nodes: ev.nodes.map(n => {
           const g = n.gameId != null ? games.get(n.gameId) : null;
@@ -123,14 +117,30 @@ function compactTournament(season) {
           }
           return o;
         }),
-      });
-    }
+  };
+}
+const gameMap = season => new Map((season.games || []).map(g => [g.id, g]));
+function compactTournament(season) {
+  const post = season.post || {};
+  if (!post.field?.length) return null;
+  const games = gameMap(season);
+  const events = [];
+  for (const [key, st] of Object.entries(STAGE)) {
+    const list = Array.isArray(post[key]) ? post[key] : post[key] ? [post[key]] : [];
+    for (const ev of list) if (ev?.nodes) events.push(compactEvent(season, ev, st, games));
   }
   return {
     field: post.field.map(f => [f.team, f.seed, f.bid === 'auto' ? 1 : 0]),
     cfg: post.cfg || season.settings?.ncaa || null,
     events,
   };
+}
+
+// Each conference tournament's bracket, by conference.
+function compactConfTournaments(season) {
+  const out = {}, games = gameMap(season);
+  for (const [c, ev] of Object.entries(season.post?.confT || {})) if (ev?.nodes?.length) out[c] = compactEvent(season, ev, 'ct', games);
+  return Object.keys(out).length ? out : undefined;
 }
 
 // One season's summary.
@@ -184,6 +194,7 @@ export function seasonSummary(season, league, sport) {
     complete,
     games: compactGames(season),
     nt: compactTournament(season),
+    ct: compactConfTournaments(season),
     reg: season.settings?.periods ?? season.settings?.innings ?? null, // regulation periods, when the app sets them
     finalsName: season.settings?.mcwsName || sport.finals,
     venue: [season.settings?.mcwsVenue, season.settings?.mcwsCity].filter(Boolean).join(', '),

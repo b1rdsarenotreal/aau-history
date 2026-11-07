@@ -46,6 +46,13 @@ dynasty apps aren't made from here unless the owner asks.
   name (a name still cut off after drawing widens them; the page then
   scrolls sideways). National-title
   banners, the Champions page and school seasons link to it.
+- Conference pages (`js/conference.js`, `#/conferences`,
+  `#/conference/<name>/<sport>/<year>`): like a league site, a header in
+  the conference's color, a tab per sport; all sports (latest champions,
+  members by sport, national champions, title leaders) or one sport's season
+  (standings, the conference tournament bracket from each season's `ct`,
+  EXTRACT_VERSION 4, members in the national tournament, champions by
+  season). Conference-title banners and the Schools page link here.
 - Uploads merge per sport: new seasons replace, older seasons are kept
   (`mergeDynasty` in `js/store.js`). History is in IndexedDB under
   `aau-history`.

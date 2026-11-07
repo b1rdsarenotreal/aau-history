@@ -81,6 +81,17 @@ with sync_playwright() as p:
         if sid == "softball":
             assert pg.locator(".nt-corner .nt-card").count() == 8, "eight regionals in the corners"
 
+    # Conference pages: the list, a conference's all-sports page, and one
+    # sport's season with standings and the conference tournament bracket.
+    t = visit(pg, "#/conferences", "k-conferences")
+    assert pg.locator(".conf-card").count() >= 8, "a card per conference"
+    t = visit(pg, "#/conference/Big%20Ten", "k-bigten")
+    assert "Latest champions" in t and "Members" in t, t[:300]
+    t = visit(pg, "#/conference/Big%20Ten/w-basketball/2031", "k-bigten-wbb")
+    assert "Standings" in t and "Conference tournament" in t and pg.locator(".nt-bracket").count() == 1, t[:300]
+    t = visit(pg, "#/conference/Big%20Ten/softball/2031", "k-bigten-sb")
+    assert "Standings" in t
+
     # Everything survives a reload: saved to IndexedDB as plain data (a
     # sport's calendar function used to make that save fail).
     pg.reload(); pg.wait_for_timeout(800)

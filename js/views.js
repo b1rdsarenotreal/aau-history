@@ -1,11 +1,12 @@
 // Pages: home, champions, schools, a school, the all-sports cup, and data.
 
-import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, readableOn, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261105224258';
-import { tournamentUrl } from './tournament.js?v=20261105224258';
-import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261105224258';
-import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261105224258';
-import { saveHistory, hydrateHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261105224258';
-import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261105224258';
+import { ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, readableOn, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261106235554';
+import { tournamentUrl } from './tournament.js?v=20261106235554';
+import { conferenceUrl } from './conference.js?v=20261106235554';
+import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261106235554';
+import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261106235554';
+import { saveHistory, hydrateHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261106235554';
+import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261106235554';
 
 const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '', schoolView: 'badges', schoolSort: 'az' };
 const finishText = (d, s, t) => (t.finish === 'finals' ? s.finalsName : FINISH_LABEL[t.finish] || '');
@@ -216,7 +217,7 @@ export function renderSchools() {
     for (const n of shown) { const h = homeConference(n); const k = h?.conf || ''; (groups[k] ||= { h, list: [] }).list.push(n); }
     const keys = Object.keys(groups).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b));
     body = keys.map(k => { const { h, list } = groups[k];
-      return `<section class="conf-group"><h2 class="conf-group-head">${h ? `${confLogo(h.d, h.conf, 30)} ${esc(h.conf)}` : 'No conference'} <span class="muted small">${list.length} school${list.length > 1 ? 's' : ''}</span></h2>
+      return `<section class="conf-group"><h2 class="conf-group-head">${h ? `<a href="${conferenceUrl(h.conf)}">${confLogo(h.d, h.conf, 30)} ${esc(h.conf)}</a>` : 'No conference'} <span class="muted small">${list.length} school${list.length > 1 ? 's' : ''}</span></h2>
         <div class="badge-grid">${list.map(schoolBadge).join('')}</div></section>`; }).join('');
   } else body = `<div class="badge-grid">${shown.map(schoolBadge).join('')}</div>`;
   app.innerHTML = `<div class="section-head"><h1>Schools</h1><span class="muted">${names.length} schools in ${dynasties().length} sports</span><span class="spacer"></span>
