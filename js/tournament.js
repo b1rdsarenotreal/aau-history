@@ -6,8 +6,8 @@
 // cards with their teams and games.
 // Route: #/tournament/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261107144328';
-import { schoolUrl } from './school.js?v=20261107144328';
+import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261107145114';
+import { schoolUrl } from './school.js?v=20261107145114';
 
 const enc = encodeURIComponent;
 export const tournamentUrl = (sport, year) => `#/tournament/${enc(sport)}${year != null ? `/${year}` : ''}`;
@@ -35,9 +35,25 @@ function sideTeam(ev, byKey, s) {
   if (typeof s === 'string') {
     const i = s.indexOf(':'), k = s.slice(0, i), key = s.slice(i + 1);
     if (k === 't') return key; // a team placed by name (the one-bracket view)
-    const n = byKey[key]; return n ? (k === 'w' ? n.w : n.l) : null;
+    const n = byKey[key];
+    if (!n) return null;
+    const r = k === 'w' ? n.w : n.l;
+    if (r && r !== '__bye__') return r;
+    // A game against a bye: its winner is the other side, known before it's
+    // "played" (and its loser is the bye).
+    const byeSide = x => x === 'bye' || (typeof x === 'number' && x >= ev.s.length) || (typeof x === 'string' && x.startsWith('l:') && byKey[x.slice(2)] && byeOf(ev, byKey, byKey[x.slice(2)]));
+    if (k === 'w' && (byeSide(n.a) || byeSide(n.b))) return sideTeam(ev, byKey, byeSide(n.a) ? n.b : n.a);
+    return null;
   }
   return null;
+}
+// Whether a node is a game against a bye (a seed past the field, or the
+// loser of such a game).
+function byeOf(ev, byKey, n, depth = 0) {
+  if (depth > 8) return false;
+  if (n.l === '__bye__') return true;
+  const b = x => x === 'bye' || (typeof x === 'number' && x >= ev.s.length) || (typeof x === 'string' && x.startsWith('l:') && byKey[x.slice(2)] && byeOf(ev, byKey, byKey[x.slice(2)], depth + 1));
+  return b(n.a) || b(n.b);
 }
 const scoreOf = (g, t) => (g && g.hr != null ? (g.h === t ? g.hr : g.ar) : null);
 function extraText(sport, reg, g) {
@@ -49,9 +65,14 @@ function extraText(sport, reg, g) {
 }
 
 // An undecided side: "Winner of Game 1", "Loser of G4", or TBD.
-function pending(byKey, side) {
+function pending(byKey, side, ev = null) {
   if (typeof side !== 'string' || !/^[wl]:/.test(side)) return 'TBD';
   const n = byKey[side.slice(2)], name = n ? shortLabel(n) : side.slice(2);
+  // The winner of a game against a bye is whoever comes from its other side.
+  if (ev && n && side[0] === 'w' && byeOf(ev, byKey, n)) {
+    const b = x => x === 'bye' || (typeof x === 'number' && x >= ev.s.length) || (typeof x === 'string' && x.startsWith('l:') && byKey[x.slice(2)] && byeOf(ev, byKey, byKey[x.slice(2)]));
+    return pending(byKey, b(n.a) ? n.b : n.a, ev);
+  }
   return `${side[0] === 'w' ? 'Winner' : 'Loser'} of ${name}`;
 }
 const shortLabel = n => (n.lb || n.k).replace(/\s*\((elimination|if necessary)\)/i, '');
@@ -66,7 +87,7 @@ function matchBox(ctx, ev, byKey, n, seedFor) {
     const sc = scoreOf(g, t), won = n.w && n.w === t, lost = n.w && n.w !== t && t;
     return `<div class="nt-row${won ? ' won' : ''}${lost ? ' lost' : ''}">
       <span class="nt-seed">${t ? esc(seedFor(t) ?? '') : ''}</span>
-      ${t ? `<span class="nt-logo">${logoImg(t, 16)}</span><a class="nt-name" href="${schoolUrl(t, ctx.sport.id, ctx.year)}" title="${esc(t)}">${esc(t)}</a>` : `<span class="nt-name muted">${esc(pending(byKey, side))}</span>`}
+      ${t ? `<span class="nt-logo">${logoImg(t, 16)}</span><a class="nt-name" href="${schoolUrl(t, ctx.sport.id, ctx.year)}" title="${esc(t)}">${esc(t)}</a>` : `<span class="nt-name muted">${esc(pending(byKey, side, ev))}</span>`}
       <span class="nt-score">${sc ?? ''}</span></div>`;
   };
   const extra = extraText(ctx.sport, ctx.reg, g);
@@ -161,12 +182,29 @@ export function eventCard(ctx, ev, seedFor, title) {
 // a team that dropped down shows as "Loser of Game 1" until it's decided.
 export const isDouble = ev => ev.k !== 'single' && ev.nodes.some(n => n.sec === 'L');
 const DE_SLOT = 76, DE_TOP = 40, DE_GAP = 52;
+// Games against a bye in a double-elimination bracket: a seed past the
+// field, and every elimination game fed by the loser of one (whose loser is
+// a bye too). They aren't drawn (the owner's rule): the team starts where
+// its first real game is.
+function byeGames(ev) {
+  const byKey = Object.fromEntries(ev.nodes.map(n => [n.k, n]));
+  const out = new Set();
+  const isBye = x => x === 'bye' || (typeof x === 'number' && x >= ev.s.length) || (typeof x === 'string' && x.startsWith('l:') && out.has(x.slice(2)));
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const n of ev.nodes) if (!out.has(n.k) && (isBye(n.a) || isBye(n.b) || n.l === '__bye__')) { out.add(n.k); grew = true; }
+  }
+  return out;
+}
 function deLayout(ev) {
   const byKey = Object.fromEntries(ev.nodes.map(n => [n.k, n]));
+  const hidden = byeGames(ev);
   const pos = {};
   let maxX = 0;
   const lay = (sec, y0) => {
-    const nodes = ev.nodes.filter(n => n.sec === sec && !n.cond);
+    const nodes = ev.nodes.filter(n => n.sec === sec && !n.cond && !hidden.has(n.k));
+    const c0 = nodes.length ? Math.min(...nodes.map(n => n.col ?? 0)) : 0; // a column of byes drops out
     const inSec = new Set(nodes.map(n => n.k));
     const kidsOf = n => [n.a, n.b].map(x => (typeof x === 'string' && x.startsWith('w:') && inSec.has(x.slice(2)) ? byKey[x.slice(2)] : null));
     const fed = new Set(nodes.flatMap(n => kidsOf(n).filter(Boolean).map(k => k.k)));
@@ -175,8 +213,8 @@ function deLayout(ev) {
       if (pos[n.k]) return pos[n.k].slot;
       const kids = kidsOf(n).filter(Boolean);
       const y = kids.length ? kids.map(place).reduce((a, b) => a + b, 0) / kids.length : slot++;
-      pos[n.k] = { x: n.col ?? 0, slot: y, sec };
-      maxX = Math.max(maxX, n.col ?? 0);
+      pos[n.k] = { x: (n.col ?? 0) - c0, slot: y, sec };
+      maxX = Math.max(maxX, (n.col ?? 0) - c0);
       return y;
     };
     nodes.filter(n => !fed.has(n.k)).forEach(place);
@@ -188,7 +226,7 @@ function deLayout(ev) {
   const lTop = DE_TOP + W.slots * DE_SLOT + DE_GAP;
   const L = lay('L', lTop);
   const fx = maxX + 1;
-  const fin = ev.nodes.filter(n => n.sec === 'F' || (!n.sec && !pos[n.k]));
+  const fin = ev.nodes.filter(n => !hidden.has(n.k) && (n.sec === 'F' || (!n.sec && !pos[n.k])));
   const wy = W.root ? pos[W.root.k].y : DE_TOP, ly = L.root ? pos[L.root.k].y : lTop;
   let fy = (wy + ly) / 2;
   for (const n of fin) { pos[n.k] = { x: fx, y: fy, sec: 'F' }; fy += DE_SLOT + 6; }

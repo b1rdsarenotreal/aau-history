@@ -12,7 +12,7 @@
 // The conference cup adds up its members' points in each sport (a school
 // counts for the conference it played that sport in that year).
 
-import { SPORTS } from './sports.js?v=20261107144328';
+import { SPORTS } from './sports.js?v=20261107145114';
 
 const sportRank = sp => { const i = Object.keys(SPORTS).indexOf(sp.id); return i < 0 ? 99 : i; };
 
