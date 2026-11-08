@@ -1,12 +1,12 @@
 // Shared page pieces: the history, logos, school labels, sport labels.
 
-import { logoFor } from './logos.js?v=20261107145114';
-import { SPORTS } from './sports.js?v=20261107145114';
+import { logoFor } from './logos.js?v=20261107170540';
+import { SPORTS } from './sports.js?v=20261107170540';
 
 // Logo files in this app (img/conf/) carry this release's version, like the
 // scripts do, so a redrawn logo shows right away instead of a cached copy.
 const RELEASE = (() => { try { return new URL(import.meta.url).searchParams.get('v') || ''; } catch { return ''; } })();
-const assetUrl = u => (RELEASE && /^img\//.test(u || '') ? `${u}${u.includes('?') ? '&' : '?'}v=${RELEASE}` : u);
+export const assetUrl = u => (RELEASE && /^img\//.test(u || '') ? `${u}${u.includes('?') ? '&' : '?'}v=${RELEASE}` : u);
 
 // Seasons are academic years: the 2030 season is "2030–31". Years stay
 // numbers in the data; this is only how they read on screen.

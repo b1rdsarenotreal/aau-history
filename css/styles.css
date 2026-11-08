@@ -1125,3 +1125,10 @@ table.members .dot { color: var(--ink); font-size: 12px; }
 .nt-board.tall { grid-template-columns: auto auto; grid-template-areas: "c c" "tl tr" "bl br"; }
 .nt-board.tall .nt-center { justify-self: center; }
 .nt-bracket.mirror .nt-sec span { text-align: right; }
+
+/* AAU seal on the home page */
+.home-hero { display: flex; align-items: center; gap: 22px; margin: 4px 0 20px; }
+.home-seal { width: 132px; height: 132px; flex: none; filter: drop-shadow(0 3px 8px rgba(15,27,45,.18)); }
+.home-hero h1 { margin: 2px 0 4px; font: 900 44px/1 var(--display); letter-spacing: .01em; }
+.home-kicker { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gold, #b8901f); }
+@media (max-width: 600px) { .home-seal { width: 88px; height: 88px; } .home-hero h1 { font-size: 34px; } .home-hero { gap: 14px; } }
