@@ -7,12 +7,12 @@
 //   with results), a short program history, coaches and every season.
 // Routes: #/school/<name>, #/school/<name>/<sport>, #/school/<name>/<sport>/<year>.
 
-import { ctx, app, esc, dynasties, schoolLook, logoImg, confLogo, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261107171525';
-import { tournamentUrl } from './tournament.js?v=20261107171525';
-import { conferenceUrl } from './conference.js?v=20261107171525';
-import { cupStandings, cupYears, FINISH_LABEL } from './cup.js?v=20261107171525';
-import { schoolSeasons, schoolTotals } from './views.js?v=20261107171525';
-import { pct } from './extract.js?v=20261107171525';
+import { ctx, app, esc, dynasties, schoolLook, logoImg, confLogo, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261112233706';
+import { tournamentUrl } from './tournament.js?v=20261112233706';
+import { conferenceUrl } from './conference.js?v=20261112233706';
+import { cupStandings, cupYears, FINISH_LABEL } from './cup.js?v=20261112233706';
+import { schoolSeasons, schoolTotals } from './views.js?v=20261112233706';
+import { pct } from './extract.js?v=20261112233706';
 
 const enc = encodeURIComponent;
 export const schoolUrl = (name, sport, year) => `#/school/${enc(name)}${sport ? `/${enc(sport)}` : ''}${sport && year ? `/${year}` : ''}`;

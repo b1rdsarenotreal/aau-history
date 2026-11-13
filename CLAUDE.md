@@ -56,6 +56,13 @@ dynasty apps aren't made from here unless the owner asks.
   (standings, the conference tournament bracket from each season's `ct`,
   EXTRACT_VERSION 4, members in the national tournament, champions by
   season). Conference-title banners and the Schools page link here.
+- The AAU look (Nov. 2026, as in the dynasty apps): a two-row top bar (the
+  AAU block wordmark, `img/aau-block.svg`, and "History", then the menu);
+  navy `--board`, gold `--optic`; Oswald headings (uppercase page titles),
+  Saira Condensed numbers, Inter text. National tournament brackets put
+  the finals on a navy panel under the wordmark and each winner's score in
+  a box of its school's color; a board wider than the page shrinks to fit
+  (down to 72%).
 - Uploads merge per sport: new seasons replace, older seasons are kept
   (`mergeDynasty` in `js/store.js`). History is in IndexedDB under
   `aau-history`.

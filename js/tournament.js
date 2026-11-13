@@ -6,8 +6,8 @@
 // cards with their teams and games.
 // Route: #/tournament/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, seasonLabel } from './ui.js?v=20261107171525';
-import { schoolUrl } from './school.js?v=20261107171525';
+import { app, esc, dynasties, logoImg, seasonLabel, schoolLook } from './ui.js?v=20261112233706';
+import { schoolUrl } from './school.js?v=20261112233706';
 
 const enc = encodeURIComponent;
 export const tournamentUrl = (sport, year) => `#/tournament/${enc(sport)}${year != null ? `/${year}` : ''}`;
@@ -85,7 +85,10 @@ function matchBox(ctx, ev, byKey, n, seedFor) {
   const row = (t, side) => {
     if (isBye(side)) return '<div class="nt-row bye"><span class="nt-seed"></span><span class="nt-logo"></span><span class="nt-name muted">Bye</span><span class="nt-score"></span></div>';
     const sc = scoreOf(g, t), won = n.w && n.w === t, lost = n.w && n.w !== t && t;
-    return `<div class="nt-row${won ? ' won' : ''}${lost ? ' lost' : ''}">
+    // The winner's score sits in a box of its school's color, as in the
+    // dynasty apps' brackets.
+    const tc = won ? schoolLook(t).color : null;
+    return `<div class="nt-row${won ? ' won' : ''}${lost ? ' lost' : ''}"${tc && /^#[0-9a-f]{3,8}$/i.test(tc) ? ` style="--tc:${tc}"` : ''}>
       <span class="nt-seed">${t ? esc(seedFor(t) ?? '') : ''}</span>
       ${t ? `<span class="nt-logo">${logoImg(t, 16)}</span><a class="nt-name" href="${schoolUrl(t, ctx.sport.id, ctx.year)}" title="${esc(t)}">${esc(t)}</a>` : `<span class="nt-name muted">${esc(pending(byKey, side, ev))}</span>`}
       <span class="nt-score">${sc ?? ''}</span></div>`;
@@ -285,7 +288,7 @@ function cornerEvent(ctx, ev, mirror, natSeed) {
 function centerHtml(ctx, s, nt, natSeed) {
   const fin = nt.events.find(e => e.st === 'fin');
   const champ = s.champion ? `<div class="nt-champion"><span class="nt-trophy">🏆</span>${logoImg(s.champion, 44)}<div><div class="small muted">National champion</div><a href="${schoolUrl(s.champion, ctx.sport.id, ctx.year)}"><b>${esc(s.champion)}</b></a></div></div>` : '';
-  const head = `<div class="nt-center-head"><div class="nt-finals-name">${esc(s.finalsName || ctx.sport.finals)}</div>${s.venue ? `<div class="small muted">${esc(s.venue)}</div>` : ''}</div>`;
+  const head = `<div class="nt-center-head"><img class="nt-mark" src="img/aau-block.svg" alt=""><div class="nt-finals-name">${esc(s.finalsName || ctx.sport.finals)}</div>${s.venue ? `<div class="small muted">${esc(s.venue)}</div>` : ''}</div>`;
   const seedFor = t => natSeed[t] ?? '';
   if (fin && fin.k === 'single') {
     const byKey = Object.fromEntries(fin.nodes.map(n => [n.k, n]));
@@ -310,7 +313,7 @@ function centerHtml(ctx, s, nt, natSeed) {
 // The one-bracket view: the finals' heading and champion over the whole bracket.
 function oneHtml(ctx, s, ev, natSeed) {
   const champ = s.champion ? `<div class="nt-champion"><span class="nt-trophy">🏆</span>${logoImg(s.champion, 44)}<div><div class="small muted">National champion</div><a href="${schoolUrl(s.champion, ctx.sport.id, ctx.year)}"><b>${esc(s.champion)}</b></a></div></div>` : '';
-  const head = `<div class="nt-center-head"><div class="nt-finals-name">${esc(s.finalsName || ctx.sport.finals)}</div>${s.venue ? `<div class="small muted">${esc(s.venue)}</div>` : ''}${ev.home ? '<div class="small muted">Earlier rounds at the higher seed\'s home</div>' : ''}</div>`;
+  const head = `<div class="nt-center-head"><img class="nt-mark" src="img/aau-block.svg" alt=""><div class="nt-finals-name">${esc(s.finalsName || ctx.sport.finals)}</div>${s.venue ? `<div class="small muted">${esc(s.venue)}</div>` : ''}${ev.home ? '<div class="small muted">Earlier rounds at the higher seed\'s home</div>' : ''}</div>`;
   return `<div class="nt-center wide">${head}${champ}${bracketHtml(ctx, ev, t => natSeed[t] ?? '', { wide: true })}</div>`;
 }
 const n0 = n => (n.lb && /semi/i.test(n.lb) ? 'National semifinal' : n.lb || 'Semifinal');
@@ -374,8 +377,8 @@ function drawnCols(ev) {
 let measureCtx = null;
 export function nameNeed(names) {
   measureCtx ||= document.createElement('canvas').getContext('2d');
-  measureCtx.font = "700 12.5px 'Public Sans', system-ui, sans-serif";
-  return Math.ceil(Math.max(80, ...names.map(t => measureCtx.measureText(t).width))) + 72;
+  measureCtx.font = "700 12.5px 'Inter', system-ui, sans-serif";
+  return Math.ceil(Math.max(80, ...names.map(t => measureCtx.measureText(t).width))) + 80;
 }
 // Box widths that fill the page: as wide as fits (up to a limit), and never
 // narrower than the longest school name needs (the page scrolls sideways
@@ -449,6 +452,10 @@ export function renderTournament(parts = [], again = false) {
   app.innerHTML = `${headline}${body}`;
   const short = Math.max(0, ...[...app.querySelectorAll('.nt-name')].map(e => e.scrollWidth - e.clientWidth));
   if (short > 0 && !again) { grow = { key: growKey(), px: (grow.key === growKey() ? grow.px : 0) + short + 2 }; return renderTournament(parts, true); }
+  // A board still wider than the page shrinks to fit (down to 72%), as the
+  // dynasty apps' full bracket does, instead of hiding the right-hand regions.
+  const scr = app.querySelector('.nt-scroll'), bd = app.querySelector('.nt-board');
+  if (scr && bd && window.innerWidth > 900) { const z = (scr.clientWidth - 2) / bd.scrollWidth; if (z < 1) bd.style.zoom = String(Math.max(0.72, z)); }
   const go = (sp, y) => { location.hash = tournamentUrl(sp, y); };
   const sp = document.getElementById('nt-sport'), yr = document.getElementById('nt-year');
   if (sp) sp.onchange = () => go(sp.value);

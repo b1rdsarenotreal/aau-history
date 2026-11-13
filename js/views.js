@@ -1,12 +1,12 @@
 // Pages: home, champions, schools, a school, the all-sports cup, and data.
 
-import { assetUrl, ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, readableOn, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261107171525';
-import { tournamentUrl } from './tournament.js?v=20261107171525';
-import { conferenceUrl } from './conference.js?v=20261107171525';
-import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261107171525';
-import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261107171525';
-import { saveHistory, hydrateHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261107171525';
-import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261107171525';
+import { assetUrl, ctx, app, modal, $, $$, esc, toast, dynasties, allSchools, school, schoolLook, logoImg, confLogo, readableOn, sportTag, rec, confRec, seasonLabel, seasonSpan } from './ui.js?v=20261112233706';
+import { tournamentUrl } from './tournament.js?v=20261112233706';
+import { conferenceUrl } from './conference.js?v=20261112233706';
+import { SPORTS, detectSport, customSport, isDynastyBackup, sportWord, sportFamily } from './sports.js?v=20261112233706';
+import { extractDynasty, EXTRACT_VERSION } from './extract.js?v=20261112233706';
+import { saveHistory, hydrateHistory, mergeDynasty, exportHistory, isHistoryBackup, emptyHistory } from './store.js?v=20261112233706';
+import { cupStandings, cupYears, finishPoints, FINISH_LABEL, CUP_POINTS } from './cup.js?v=20261112233706';
 
 const ui = { champSport: 'all', cupYear: null, cupGender: 'all', cupView: 'schools', schoolSport: 'all', schoolFilter: '', schoolView: 'badges', schoolSort: 'az' };
 const finishText = (d, s, t) => (t.finish === 'finals' ? s.finalsName : FINISH_LABEL[t.finish] || '');
@@ -112,7 +112,7 @@ export function renderHome() {
   const seasons = ds.reduce((a, d) => a + Object.keys(d.years).length, 0);
   app.innerHTML = `<div class="home-hero"><img class="home-seal" src="${assetUrl('img/aau-seal.svg')}" alt="Association of American Universities Athletics seal"><div><div class="home-kicker">Association of American Universities Athletics</div><h1>AAU History</h1><div class="muted">${ds.length} sport${ds.length === 1 ? '' : 's'} · ${seasons} seasons · ${allSchools().length} schools</div></div></div>
     ${ctx.notice ? `<div class="card" style="margin-bottom:16px;border-left:4px solid #d97706"><b>Fixed a mix-up.</b> ${esc(ctx.notice)}</div>` : ''}
-    ${cup?.schools.length ? `<div class="banner" style="background:linear-gradient(120deg, ${esc(schoolLook(cup.schools[0].school).color || '#0b3c5d')}, #15171c)"><span class="trophy">🏆</span><div><div class="small" style="opacity:.8">${seasonLabel(last)} AAU All-Sports Cup</div><div class="big">${esc(cup.schools[0].school)}</div><div class="small" style="opacity:.8">${cup.schools[0].total} points · ${cup.schools[1] ? `${esc(cup.schools[1].school)} ${cup.schools[1].total}` : ''}</div></div></div><div style="height:16px"></div>` : ''}
+    ${cup?.schools.length ? `<div class="banner" style="background:linear-gradient(120deg, ${esc(schoolLook(cup.schools[0].school).color || '#0b1f3a')}, #0b1f3a)"><span class="trophy">🏆</span><div><div class="small" style="opacity:.8">${seasonLabel(last)} AAU All-Sports Cup</div><div class="big">${esc(cup.schools[0].school)}</div><div class="small" style="opacity:.8">${cup.schools[0].total} points · ${cup.schools[1] ? `${esc(cup.schools[1].school)} ${cup.schools[1].total}` : ''}</div></div></div><div style="height:16px"></div>` : ''}
     <div class="grid">
       <div class="card"><h2>Latest national champions</h2><div class="table-wrap"><table><tbody>
         ${latest.map(({ d, y, s }) => `<tr><td>${sportTag(d.sport)}</td><td class="num muted">${Number.isFinite(y) ? seasonLabel(y) : ''}</td><td>${s ? school(s.champion) : '<span class="muted">Not crowned yet</span>'}</td></tr>`).join('')}

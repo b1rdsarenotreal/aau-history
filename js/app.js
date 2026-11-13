@@ -1,12 +1,12 @@
 // App shell: loading the history, the top bar and page routing.
 
-import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261107171525';
-import { loadLogoTable } from './logos.js?v=20261107171525';
-import { renderSchool } from './school.js?v=20261107171525';
-import { renderTournament } from './tournament.js?v=20261107171525';
-import { renderConference, renderConferences } from './conference.js?v=20261107171525';
-import { ctx, app, esc } from './ui.js?v=20261107171525';
-import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261107171525';
+import { loadHistory, repairHistory, saveHistory } from './store.js?v=20261112233706';
+import { loadLogoTable } from './logos.js?v=20261112233706';
+import { renderSchool } from './school.js?v=20261112233706';
+import { renderTournament } from './tournament.js?v=20261112233706';
+import { renderConference, renderConferences } from './conference.js?v=20261112233706';
+import { ctx, app, esc } from './ui.js?v=20261112233706';
+import { renderHome, renderChampions, renderSchools, renderCup, renderData } from './views.js?v=20261112233706';
 
 const VIEWS = { home: 'Home', champions: 'Champions', tournament: 'Tournaments', schools: 'Schools', conferences: 'Conferences', cup: 'All-Sports Cup', data: 'Data' };
 const SUBVIEWS = { school: 'schools', conference: 'conferences' };

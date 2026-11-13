@@ -72,7 +72,7 @@ with sync_playwright() as p:
     for fname, champ in champs.items():
         sid = ids[fname.replace(".json", "")]
         t = visit(pg, f"#/tournament/{sid}/2031", f"t-{sid}")
-        assert "AAU National Tournament" in t and champ in t, (sid, t[:200])
+        assert "AAU NATIONAL TOURNAMENT" in t.upper() and champ in t, (sid, t[:200])
         assert pg.locator(".nt-champion").count() == 1, sid
         if sid in ("w-basketball", "w-soccer", "w-volleyball"):
             assert pg.locator(".nt-corner .nt-bracket").count() == 4, sid
