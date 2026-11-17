@@ -8,11 +8,11 @@
 // Routes: #/conferences, #/conference/<name>, #/conference/<name>/<sport>,
 // #/conference/<name>/<sport>/<year>.
 
-import { app, esc, dynasties, logoImg, confLogo, rec, confRec, seasonLabel, readableOn } from './ui.js?v=20261116215134';
-import { schoolUrl } from './school.js?v=20261116215134';
-import { tournamentUrl, bracketHtml, eventCard, nameNeed, isDouble, deBracketHtml } from './tournament.js?v=20261116215134';
-import { FINISH_LABEL } from './cup.js?v=20261116215134';
-import { pct } from './extract.js?v=20261116215134';
+import { app, esc, dynasties, logoImg, confLogo, rec, confRec, seasonLabel, readableOn } from './ui.js?v=20261116222145';
+import { schoolUrl } from './school.js?v=20261116222145';
+import { tournamentUrl, bracketHtml, eventCard, nameNeed, isDouble, deBracketHtml } from './tournament.js?v=20261116222145';
+import { FINISH_LABEL } from './cup.js?v=20261116222145';
+import { pct } from './extract.js?v=20261116222145';
 
 const enc = encodeURIComponent;
 export const conferenceUrl = (name, sport, year) => `#/conference/${enc(name)}${sport ? `/${enc(sport)}` : ''}${sport && year ? `/${year}` : ''}`;
