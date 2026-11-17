@@ -1,7 +1,7 @@
 // Shared page pieces: the history, logos, school labels, sport labels.
 
-import { logoFor } from './logos.js?v=20261116222145';
-import { SPORTS } from './sports.js?v=20261116222145';
+import { logoFor } from './logos.js?v=20261116223240';
+import { SPORTS } from './sports.js?v=20261116223240';
 
 // Logo files in this app (img/conf/) carry this release's version, like the
 // scripts do, so a redrawn logo shows right away instead of a cached copy.
@@ -71,6 +71,7 @@ export const school = (name, size = 18) => (name ? `<span class="team">${logoImg
 // list as the dynasty apps' CONF_LOGO_LINKS): older backups still name the
 // drawn file.
 const CONF_LOGO_LINKS = {
+  wac: 'https://content.sportslogos.net/logos/153/4669/full/western_athletic_conference_logo_primary_19922010.png',
   bigten: 'https://content.sportslogos.net/logos/153/4661/full/big_ten_conference_logo_primary_20115933.png',
   ivy: 'https://content.sportslogos.net/logos/153/4824/full/ivy_league_logo_primary_2019_sportslogosnet-9024.png',
   metro: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/METRO_Primary_LtBG.png/500px-METRO_Primary_LtBG.png',
