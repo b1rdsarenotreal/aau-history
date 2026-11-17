@@ -32,6 +32,7 @@ const START = {
   fallThu: y => utc(y, 7, lastWeekday(y, 7, 31, 4) - 3), // the week of the last Thursday in August (soccer)
   janFri2: y => { const f = 1 + ((5 - utc(y + 1, 0, 1).getUTCDay() + 7) % 7) + 7; return utc(y + 1, 0, f - 4); }, // second Friday of January
   febFri2: y => { const f = 1 + ((5 - utc(y + 1, 1, 1).getUTCDay() + 7) % 7) + 7; return utc(y + 1, 1, f - 4); }, // second Friday of February
+  febFri4: y => { const f = 1 + ((5 - utc(y + 1, 1, 1).getUTCDay() + 7) % 7) + 7; return utc(y + 1, 1, f - 4 + 14); }, // two weeks after softball (baseball, the owner's rule, Nov. 2026)
   octMon: y => utc(y, 9, firstMonday(y, 9)), // the first Monday in October
   novMon: y => utc(y, 10, firstMonday(y, 10)), // the first Monday in November
   janMon: y => { const d = utc(y + 1, 0, 26); return utc(y + 1, 0, 26 + ((8 - d.getUTCDay()) % 7)); }, // the last Monday in January
@@ -49,7 +50,7 @@ export const SPORTS = {
   'w-hockey': { name: "Women's Ice Hockey", short: 'W IH', gender: 'women', finals: 'Frozen Four', ties: true, reg: 3, unit: 'game', start: START.octMon },
   'm-hockey': { name: "Men's Ice Hockey", short: 'M IH', gender: 'men', finals: 'Frozen Four', ties: true, reg: 3, unit: 'game', start: START.octMon },
   softball: { name: 'Softball', short: 'SB', gender: 'women', finals: "Women's College World Series", reg: 7, unit: 'game', innings: true, start: START.febFri2 },
-  baseball: { name: 'Baseball', short: 'BSB', gender: 'men', finals: 'College World Series', reg: 9, unit: 'game', innings: true, start: START.febFri2 },
+  baseball: { name: 'Baseball', short: 'BSB', gender: 'men', finals: 'College World Series', reg: 9, unit: 'game', innings: true, start: START.febFri4 },
   'w-lacrosse': { name: "Women's Lacrosse", short: 'W Lax', gender: 'women', finals: 'Final Four', reg: 4, unit: 'game', start: START.janMon },
   'm-lacrosse': { name: "Men's Lacrosse", short: 'M Lax', gender: 'men', finals: 'Final Four', reg: 4, unit: 'game', start: START.janMon },
 };
